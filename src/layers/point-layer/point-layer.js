@@ -186,17 +186,10 @@ export default class PointLayer extends Layer {
     };
   }
 
-  getChangedTriggers(dataUpdateTriggers) {
-    const triggerChanged = diffUpdateTriggers(dataUpdateTriggers, this._oldDataUpdateTriggers);
-    this._oldDataUpdateTriggers = dataUpdateTriggers;
-
-    return triggerChanged;
-  }
-
   calculateDataAttribute(allData, filteredIndex, getPosition) {
     const data = [];
+
     for (let i = 0; i < filteredIndex.length; i++) {
-      // data = filteredIndex.reduce((accu, index) => {
       const index = filteredIndex[i];
       const pos = getPosition({data: allData[index]});
 
@@ -205,12 +198,23 @@ export default class PointLayer extends Layer {
       if (pos.every(Number.isFinite)) {
         data.push({
           data: allData[index],
+          position: pos,
           // index is important for filter
           index
         });
       }
     }
     return data;
+  }
+
+  getDataUpdateTriggers({filteredIndex}) {
+    return {
+      ...super.getDataUpdateTriggers({filteredIndex}),
+      ...this.config.textLabel.reduce((accu, tl, i) => ({
+        ...accu,
+        [`getLabelCharacterSet-${i}`]: tl.field ? tl.field.name : null
+      }), {}),
+    };
   }
 
   formatLayerData(allData, filteredIndex, oldLayerData) {
@@ -226,7 +230,6 @@ export default class PointLayer extends Layer {
       sizeScale,
       sizeDomain,
       textLabel,
-      columns,
       visConfig: {
         radiusRange,
         fixedRadius,
@@ -236,7 +239,9 @@ export default class PointLayer extends Layer {
       }
     } = this.config;
 
-    // fill color
+    const {data, triggerChanged} = this.updateData(allData, filteredIndex, oldLayerData);
+
+    // point color
     const cScale =
       colorField &&
       this.getVisChannelScale(
@@ -258,30 +263,6 @@ export default class PointLayer extends Layer {
     const rScale =
       sizeField &&
       this.getVisChannelScale(sizeScale, sizeDomain, radiusRange, fixedRadius);
-
-    const getPosition = this.getPositionAccessor();
-
-    const dataUpdateTriggers = {
-      getData: {columns, filteredIndex},
-      ...textLabel.reduce((accu, tl, i) => ({
-        ...accu,
-        [`getLabelCharacterSet-${i}`]: tl.field ? tl.field.name : null
-      }), {}),
-      getMeta: {columns}
-    };
-
-    const triggerChanged = this.getChangedTriggers(dataUpdateTriggers);
-
-    if (triggerChanged.getMeta) {
-      this.updateLayerMeta(allData, getPosition);
-    }
-
-    let data = [];
-    if (!triggerChanged.getData) {
-      data = oldLayerData.data;
-    } else {
-      data = this.calculateDataAttribute(allData, filteredIndex, getPosition);
-    }
 
     const getRadius = rScale
       ? d => this.getEncodedChannelValue(rScale, d.data, sizeField, 0)
@@ -326,7 +307,6 @@ export default class PointLayer extends Layer {
 
     return {
       data,
-      getPosition,
       getFillColor,
       getLineColor,
       getRadius,
@@ -376,6 +356,7 @@ export default class PointLayer extends Layer {
   renderLayer({
     data,
     idx,
+    gpuFilter,
     layerInteraction,
     objectHovered,
     mapState,
@@ -385,9 +366,9 @@ export default class PointLayer extends Layer {
     const radiusScale = this.getRadiusScaleByZoom(mapState);
 
     const layerProps = {
-      // TODO: support setting stroke and fill simultaneously
       stroked: this.config.visConfig.outline,
       filled: this.config.visConfig.filled,
+      ...gpuFilter,
       radiusMinPixels: 0,
       lineWidthMinPixels: this.config.visConfig.thickness,
       radiusScale,
@@ -403,9 +384,6 @@ export default class PointLayer extends Layer {
 
     const {textLabel} = this.config;
     const updateTriggers = {
-      getPosition: {
-        columns: this.config.columns
-      },
       getRadius: {
         sizeField: this.config.sizeField,
         radiusRange: this.config.visConfig.radiusRange,
@@ -423,7 +401,8 @@ export default class PointLayer extends Layer {
         colorField: this.config.strokeColorField,
         colorRange: this.config.visConfig.strokeColorRange,
         colorScale: this.config.strokeColorScale
-      }
+      },
+      getFilterValue: gpuFilter.filterValueUpdateTriggers,
     };
 
     return [

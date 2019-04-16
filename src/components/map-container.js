@@ -100,6 +100,8 @@ export default function MapContainerFactory(MapPopover, MapControl) {
       this.previousLayers = {
         // [layers.id]: mapboxLayerConfig
       };
+
+      this._deck = null;
     }
 
     componentWillUnmount() {
@@ -281,6 +283,7 @@ export default function MapContainerFactory(MapPopover, MapControl) {
 
     _renderLayer = (overlays, idx) => {
       const {
+        datasets,
         layers,
         layerData,
         hoverInfo,
@@ -291,7 +294,8 @@ export default function MapContainerFactory(MapPopover, MapControl) {
       } = this.props;
       const layer = layers[idx];
       const data = layerData[idx];
-
+      const {gpuFilter} = datasets[layer.config.dataId] || {};
+      // console.log(datasets[layer.config.dataId])
       const layerInteraction = {
         mousePosition: mousePos.mousePosition,
         wrapLongitude: true
@@ -305,12 +309,13 @@ export default function MapContainerFactory(MapPopover, MapControl) {
       // Layer is Layer class
       const layerOverlay = layer.renderLayer({
         data,
+        gpuFilter,
         idx,
-        layerInteraction,
-        objectHovered,
-        mapState,
         interactionConfig,
-        layerCallbacks
+        layerCallbacks,
+        layerInteraction,
+        mapState,
+        objectHovered
       });
 
       return overlays.concat(layerOverlay || []);
@@ -361,6 +366,11 @@ export default function MapContainerFactory(MapPopover, MapControl) {
           onBeforeRender={this._onBeforeRender}
           onHover={visStateActions.onLayerHover}
           onClick={visStateActions.onLayerClick}
+          ref={comp => {
+            if (comp && comp.deck && !this._deck) {
+              this._deck = comp.deck;
+            }
+          }}
         />
       );
     }
