@@ -303,7 +303,7 @@ export default function MapContainerFactory(MapPopover, MapControl) {
       const {gpuFilter} = datasets[layer.config.dataId] || {};
       // console.log(datasets[layer.config.dataId])
       const layerInteraction = {
-        mousePosition: mousePos.mousePosition,
+        mousePositionXY: mousePos.mousePosition,
         wrapLongitude: true
       };
 

@@ -28,6 +28,22 @@ const defaultProps = {
 };
 
 export default class EnhancedCPUGridLayer extends CPUGridLayer {
+  // updateState({oldProps, props, changeFlags}) {
+  //   console.log('updateState ', props.id)
+  //   this.updateGetValueFuncs(oldProps, props);
+  //   console.log(oldProps.colorScale)
+  //   console.log(props.colorScale)
+  //   const reprojectNeeded = this.needsReProjectPoints(oldProps, props, changeFlags);
+
+  //   if (changeFlags.dataChanged || reprojectNeeded) {
+  //     // project data into hexagons, and get sortedBins
+  //     this.getLayerData();
+  //   } else {
+  //     const dimensionChanges = this.getDimensionChanges(oldProps, props) || [];
+  //     dimensionChanges.forEach(f => typeof f === 'function' && f.apply(this));
+  //   }
+  // }
+
   getDimensionUpdaters() {
     const dimensionUpdaters = super.getDimensionUpdaters();
     // add colorScale and sizeScale to dimension updates

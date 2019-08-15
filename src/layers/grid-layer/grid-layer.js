@@ -55,30 +55,29 @@ export default class GridLayer extends AggregationLayer {
     return GridLayerIcon;
   }
 
-  formatLayerData(datasets, oldLayerData, opt = {}) {
-    const formattedData = super.formatLayerData(
-      datasets,
-      oldLayerData,
-      opt
-    );
+  calculateDataAttribute(allData, filteredIndex, getPosition) {
+    const data = [];
 
-    const {getPosition, data} = formattedData;
+    for (let i = 0; i < filteredIndex.length; i++) {
+      const index = filteredIndex[i];
+      const pos = getPosition({data: allData[index]});
 
-    // TODO: fix this in deck.gl layer
-    const cleaned = data.filter(d => {
-      const pos = getPosition(d);
-      return pos.every(Number.isFinite);
-    });
+      // if doesn't have point lat or lng, do not add the point
+      // deck.gl can't handle position = null
+      if (pos.every(Number.isFinite)) {
+        data.push({
+          index,
+          data: allData[index]
+        });
+      }
+    }
 
-    // All data processing is done in deck.gl layer
-    return {
-      ...formattedData,
-      data: cleaned
-    };
+    return data;
   }
 
   renderLayer({
     data,
+    gpuFilter,
     idx,
     objectHovered,
     mapState,
@@ -90,6 +89,20 @@ export default class GridLayer extends AggregationLayer {
     const eleZoomFactor = this.getElevationZoomFactor(mapState);
     const {visConfig} = this.config;
     const cellSize = visConfig.worldUnitSize * 1000;
+    const updateTriggers = {
+      getColorValue: {
+        colorField: this.config.colorField,
+        colorAggregation: this.config.visConfig.colorAggregation,
+        ...gpuFilter.filterRange,
+        ...gpuFilter.filterValueUpdateTriggers
+      },
+      getElevationValue: {
+        sizeField: this.config.sizeField,
+        sizeAggregation: this.config.visConfig.sizeAggregation,
+        ...gpuFilter.filterRange,
+        ...gpuFilter.filterValueUpdateTriggers
+      }
+    };
 
     return [
       new DeckGLGridLayer({
@@ -125,7 +138,7 @@ export default class GridLayer extends AggregationLayer {
 
         // callbacks
         onSetColorDomain: layerCallbacks.onSetLayerDomain,
-
+        updateTriggers,
         _subLayerProps: {
           CPU: {
             type: EnhancedCPUGridLayer

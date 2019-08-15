@@ -22,20 +22,45 @@ import memoize from 'lodash.memoize';
 import Layer from './base-layer';
 import {hexToRgb} from 'utils/color-utils';
 import {aggregate} from 'utils/aggregate-utils';
-import {CHANNEL_SCALES, FIELD_OPTS, DEFAULT_AGGREGATION} from 'constants/default-settings';
+import {
+  CHANNEL_SCALES,
+  FIELD_OPTS,
+  DEFAULT_AGGREGATION
+} from 'constants/default-settings';
 
 export const pointPosAccessor = ({lat, lng}) => d => [
-  d[lng.fieldIdx],
-  d[lat.fieldIdx]
+  d.data[lng.fieldIdx],
+  d.data[lat.fieldIdx]
 ];
 
 export const pointPosResolver = ({lat, lng}) =>
   `${lat.fieldIdx}-${lng.fieldIdx}`;
 
-export const getValueAggr = (field, aggregation) => points =>
-  aggregate(points.map(p => p[field.tableFieldIndex - 1]), aggregation);
+export const getValueAggrFunc = (
+  field,
+  aggregation,
+  filterRange,
+  getFilterValue
+) => {
+  const hasFilter = Object.values(filterRange).some(arr =>
+    arr.some(v => v !== 0)
+  );
+  return points => {
+    const allPoints = hasFilter
+      ? points.filter(pt => {
 
-const aggrResolver = (field, aggregation) => `${field.name}-${aggregation}`;
+          const filterValues = getFilterValue(pt);
+          return filterValues.every(
+            (val, i) =>
+              val >= filterRange.filterMin[i] && val <= filterRange.filterMax[i]
+          )
+        })
+      : points;
+    return field
+      ? aggregate(allPoints.map(p => p.data[field.tableFieldIndex - 1]), aggregation)
+      : allPoints.length;
+  };
+};
 
 const getLayerColorRange = colorRange => colorRange.colors.map(hexToRgb);
 
@@ -45,10 +70,8 @@ export default class AggregationLayer extends Layer {
   constructor(props) {
     super(props);
 
-    this.getPosition = memoize(pointPosAccessor, pointPosResolver);
-    this.getColorValue = memoize(getValueAggr, aggrResolver);
+    this.getPositionAccessor = () => pointPosAccessor(this.config.columns);
     this.getColorRange = memoize(getLayerColorRange);
-    this.getElevationValue = memoize(getValueAggr, aggrResolver);
   }
 
   get isAggregated() {
@@ -68,7 +91,7 @@ export default class AggregationLayer extends Layer {
       ...super.noneLayerDataAffectingProps,
       'enable3d',
       'colorRange',
-      'colorScale',
+      // 'colorScale',
       'colorDomain',
       'sizeRange',
       'sizeScale',
@@ -115,13 +138,15 @@ export default class AggregationLayer extends Layer {
    */
   getVisualChannelDescription(key) {
     // e.g. label: Color, measure: Average of ETA
-    const {range, field, defaultMeasure, aggregation} = this.visualChannels[key];
+    const {range, field, defaultMeasure, aggregation} = this.visualChannels[
+      key
+    ];
     return {
       label: this.visConfigSettings[range].label,
       measure: this.config[field]
         ? `${this.config.visConfig[aggregation]} of ${this.config[field].name}`
         : defaultMeasure
-    }
+    };
   }
 
   getHoverData(object) {
@@ -141,7 +166,6 @@ export default class AggregationLayer extends Layer {
    * @param channel
    */
   validateVisualChannel(channel) {
-
     // field type decides aggregation type decides scale type
     this.validateFieldType(channel);
     this.validateAggregationType(channel);
@@ -163,8 +187,9 @@ export default class AggregationLayer extends Layer {
     if (!aggregationOptions.length) {
       // if field cannot be aggregated, set field to null
       this.updateLayerConfig({[field]: null});
-
-    } else if (!aggregationOptions.includes(this.config.visConfig[aggregation])) {
+    } else if (
+      !aggregationOptions.includes(this.config.visConfig[aggregation])
+    ) {
       // current aggregation type is not supported by this field
       // set aggregation to the first supported option
       this.updateLayerVisConfig({[aggregation]: aggregationOptions[0]});
@@ -176,8 +201,10 @@ export default class AggregationLayer extends Layer {
     const {field, channelScaleType} = visualChannel;
 
     return Object.keys(
-      this.config[field] ? FIELD_OPTS[this.config[field].type].scale[channelScaleType] :
-        DEFAULT_AGGREGATION[channelScaleType])
+      this.config[field]
+        ? FIELD_OPTS[this.config[field].type].scale[channelScaleType]
+        : DEFAULT_AGGREGATION[channelScaleType]
+    );
   }
 
   /**
@@ -189,11 +216,13 @@ export default class AggregationLayer extends Layer {
     const visualChannel = this.visualChannels[channel];
     const {field, aggregation, channelScaleType} = visualChannel;
     const aggregationType = this.config.visConfig[aggregation];
-    return this.config[field] ?
-      // scale options based on aggregation
-      FIELD_OPTS[this.config[field].type].scale[channelScaleType][aggregationType] :
-      // default scale options for point count
-      DEFAULT_AGGREGATION[channelScaleType][aggregationType];
+    return this.config[field]
+      ? // scale options based on aggregation
+        FIELD_OPTS[this.config[field].type].scale[channelScaleType][
+          aggregationType
+        ]
+      : // default scale options for point count
+        DEFAULT_AGGREGATION[channelScaleType][aggregationType];
   }
 
   /**
@@ -205,44 +234,38 @@ export default class AggregationLayer extends Layer {
 
   updateLayerMeta(allData, getPosition) {
     // get bounds from points
-    const bounds = this.getPointsBounds(allData, getPosition);
+    const bounds = this.getPointsBounds(allData, d => getPosition({data: d}));
 
     this.updateMeta({bounds});
   }
 
+  calculateDataAttribute(allData, filteredIndex, getPosition) {
+    return filteredIndex.map(index => ({data: allData[index], index}));
+  }
+
   formatLayerData(datasets, oldLayerData, opt = {}) {
-    const getPosition = this.getPosition(this.config.columns);
-    const {filteredIndex, allData} = datasets[this.config.dataId];
+    const getPosition = this.getPositionAccessor(); // if (
+    const {filteredIndex, allData, gpuFilter} = datasets[this.config.dataId];
 
-    if (!oldLayerData || oldLayerData.getPosition !== getPosition) {
-      this.updateLayerMeta(allData, getPosition);
-    }
+    const getColorValue = getValueAggrFunc(
+      this.config.colorField,
+      this.config.visConfig.colorAggregation,
+      // filterRange
+      gpuFilter.filterRange,
+      // getFilterValue,
+      gpuFilter.filterValueAccessor()
+    );
 
-    const getColorValue = this.config.colorField
-      ? this.getColorValue(
-          this.config.colorField,
-          this.config.visConfig.colorAggregation
-        )
-      : undefined;
+    const getElevationValue = getValueAggrFunc(
+      this.config.sizeField,
+      this.config.visConfig.sizeAggregation,
+      // filterRange
+      gpuFilter.filterRange,
+      // getFilterValue,
+      gpuFilter.filterValueAccessor()
+    );
 
-    const getElevationValue = this.config.sizeField
-      ? this.getElevationValue(
-          this.config.sizeField,
-          this.config.visConfig.sizeAggregation
-        )
-      : undefined;
-
-    let data;
-    if (
-      oldLayerData &&
-      oldLayerData.data &&
-      opt.sameData &&
-      oldLayerData.getPosition === getPosition
-    ) {
-      data = oldLayerData.data;
-    } else {
-      data = filteredIndex.map(i => allData[i]);
-    }
+    const {data} = this.updateData(allData, filteredIndex, oldLayerData);
 
     return {
       data,

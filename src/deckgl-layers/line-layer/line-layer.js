@@ -35,7 +35,7 @@ const defaultProps = {
 
   // brush radius in meters
   brushRadius: 100000,
-  mousePosition: [0, 0]
+  mousePositionXY: [0, 0]
 };
 
 function addBrushingVsShader(vs) {
@@ -95,7 +95,7 @@ export default class LineBrushingLayer extends LineLayer {
       brushTarget,
       brushRadius,
       enableBrushing,
-      mousePosition,
+      mousePositionXY,
       strokeScale
     } = this.props;
 
@@ -107,9 +107,9 @@ export default class LineBrushingLayer extends LineLayer {
         brushing_uBrushRadius: brushRadius,
         brushing_uEnableBrushing: enableBrushing ? 1 : 0,
         brushing_uStrokeScale: strokeScale,
-        brushing_uMousePosition: mousePosition
-          ? new Float32Array(this.unproject(mousePosition))
-          : defaultProps.mousePosition
+        brushing_umousePositionXY: mousePositionXY
+          ? new Float32Array(this.unproject(mousePositionXY))
+          : defaultProps.mousePositionXY
       }
     });
   }

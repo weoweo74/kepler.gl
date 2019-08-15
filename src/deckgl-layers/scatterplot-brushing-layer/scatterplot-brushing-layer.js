@@ -37,7 +37,7 @@ const defaultProps = {
   enableBrushing: true,
   // brush radius in meters
   brushRadius: 100000,
-  mousePosition: [0, 0],
+  mousePositionXY: [0, 0],
   outsideBrushRadius: 0
 };
 
@@ -57,7 +57,7 @@ class ScatterplotBrushingLayer extends ScatterplotLayer {
     const {
       brushRadius,
       enableBrushing,
-      mousePosition,
+      mousePositionXY,
       outsideBrushRadius
     } = this.props;
 
@@ -68,9 +68,9 @@ class ScatterplotBrushingLayer extends ScatterplotLayer {
         ...uniforms,
         brushing_uBrushRadius: brushRadius,
         brushing_uOutsideBrushRadius: outsideBrushRadius,
-        brushing_uMousePosition: mousePosition
-          ? new Float32Array(this.unproject(mousePosition))
-          : defaultProps.mousePosition,
+        brushing_umousePositionXY: mousePositionXY
+          ? new Float32Array(this.unproject(mousePositionXY))
+          : defaultProps.mousePositionXY,
         brushing_uEnableBrushing: enableBrushing ? 1 : 0
       }
     });

@@ -34,7 +34,7 @@ const defaultProps = {
   strokeScale: 1,
   // brush radius in meters
   brushRadius: 100000,
-  mousePosition: [0, 0]
+  mousePositionXY: [0, 0]
 };
 
 function addBrushingVsShader(vs) {
@@ -75,7 +75,7 @@ class ArcBrushingLayer extends ArcLayer {
       brushTarget,
       brushRadius,
       enableBrushing,
-      mousePosition,
+      mousePositionXY,
       strokeScale
     } = this.props;
 
@@ -88,9 +88,9 @@ class ArcBrushingLayer extends ArcLayer {
         brushing_uBrushRadius: brushRadius,
         brushing_uEnableBrushing: enableBrushing ? 1 : 0,
         brushing_uStrokeScale: strokeScale,
-        brushing_uMousePosition: mousePosition
-          ? new Float32Array(this.unproject(mousePosition))
-          : defaultProps.mousePosition
+        brushing_umousePositionXY: mousePositionXY
+          ? new Float32Array(this.unproject(mousePositionXY))
+          : defaultProps.mousePositionXY
       }
     });
   }

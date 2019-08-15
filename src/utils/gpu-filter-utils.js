@@ -147,7 +147,7 @@ export function getGpuFilterProps(filters, dataId) {
     filterRange.filterMin[i] = filter ? filter.value[0] : 0;
     filterRange.filterMax[i] = filter ? filter.value[1] : 0;
 
-    triggers[i] = filter ? filter.name : null;
+    triggers[`gpuFilter_${i}`] = filter ? filter.name : null;
     channels.push(filter);
   }
 
