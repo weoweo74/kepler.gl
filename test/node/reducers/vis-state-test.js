@@ -631,7 +631,7 @@ test('#visStateReducer -> LAYER_CONFIG_CHANGE -> isVisible -> animationConfig', 
   t.end();
 });
 
-test('#visStateReducer -> LAYER_CONFIG_CHANGE -> isVisible -> splitMaps', t => {
+test.only('#visStateReducer -> LAYER_CONFIG_CHANGE -> isVisible -> splitMaps', t => {
   const initialState = StateWSplitMaps.visState;
   const layer = initialState.layers[0];
 

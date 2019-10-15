@@ -266,6 +266,7 @@ export const preparedDataset = addFilterToData(
   dataId,
   gpuTimeFilter
 ).datasets[dataId];
+
 export const preparedDatasetWithNull = addFilterToData(
   {rows: rowsWithNull, fields: fieldsWithNull},
   dataId,

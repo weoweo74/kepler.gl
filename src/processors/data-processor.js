@@ -31,9 +31,8 @@ import {
   getSampleData
 } from 'utils/data-utils';
 import KeplerGlSchema from 'schemas';
-import {GUIDES_FILE_FORMAT, USER_GUIDE_GEOJSON} from 'constants/user-guides';
+import {GUIDES_FILE_FORMAT} from 'constants/user-guides';
 import {isPlainObject} from 'utils/utils';
-import {isObject} from 'utils/utils';
 
 export const ACCEPTED_ANALYZER_TYPES = [
   AnalyzerDATA_TYPES.DATE,

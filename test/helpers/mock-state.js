@@ -103,7 +103,7 @@ function mockStateWithFileUpload() {
       l.config.visConfig.strokeColor = [i + 10, i + 10, i + 10];
     }
   });
-
+  console.log(updatedState.visState.layers[2].config.columns)
   return updatedState;
 }
 

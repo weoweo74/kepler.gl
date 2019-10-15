@@ -827,7 +827,7 @@ export default class Layer {
 
     let data = [];
     if (!triggerChanged.getData) {
-      console.log('same data')
+      //  console.log('same data')
       data = oldLayerData.data;
     } else {
       data = this.calculateDataAttribute(allData, filteredIndex, getPosition);

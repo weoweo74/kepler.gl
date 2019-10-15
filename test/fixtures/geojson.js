@@ -50,7 +50,7 @@ const feature0Parsed = {
   geometry: feature0.geometry,
   properties: {
     ...feature0.properties,
-    OBJ: '{"id":1}'
+    OBJ: {id: 1}
   }
 };
 const feature1 = {
@@ -83,7 +83,7 @@ const feature1Parsed = {
   geometry: feature1.geometry,
   properties: {
     ...feature1.properties,
-    OBJ: '{"id":2}'
+    OBJ: {id: 2}
   }
 };
 const feature2 = {
@@ -115,7 +115,7 @@ const feature2Parsed = {
   geometry: feature2.geometry,
   properties: {
     ...feature2.properties,
-    OBJ: '{"id":3}'
+    OBJ: {id: 3}
   }
 };
 
@@ -150,7 +150,7 @@ const feature3Parsed = {
   properties: {
     ...feature3.properties,
     TRIPS: null,
-    OBJ: '{"id":4}'
+    OBJ: {id: 4}
   }
 };
 const feature4 = {
@@ -175,25 +175,19 @@ const feature4 = {
       ]
     ]
   }
-}
+};
 const feature4Parsed = {
   type: 'Feature',
   geometry: feature4.geometry,
   properties: {
     ...feature4.properties,
     TRIPS: null,
-    OBJ: '{"id":5}'
+    OBJ: {id: 5}
   }
 };
 export const geojsonData = {
   type: 'FeatureCollection',
-  features: [
-    feature0,
-    feature1,
-    feature2,
-    feature3,
-    feature4
-  ]
+  features: [feature0, feature1, feature2, feature3, feature4]
 };
 
 export const fields = [
@@ -234,7 +228,7 @@ export const fields = [
     tableFieldIndex: 6
   },
   {
-    type: 'string',
+    type: 'geojson',
     name: 'OBJ',
     format: '',
     tableFieldIndex: 7
@@ -242,51 +236,11 @@ export const fields = [
 ];
 
 export const rows = [
-  [
-    feature0Parsed,
-    1,
-    94107,
-    94107,
-    11,
-    'a',
-    '{"id":1}'
-  ],
-  [
-    feature1Parsed,
-    2,
-    94105,
-    94105,
-    4,
-    'b',
-    '{"id":2}'
-  ],
-  [
-    feature2,
-    3,
-    94109,
-    94109,
-    20,
-    null,
-    '{"id":3}'
-  ],
-  [
-    feature3Parsed,
-    4,
-    94111,
-    9411,
-    null,
-    'c',
-    '{"id":4}'
-  ],
-  [
-    feature4Parsed,
-    5,
-    74107,
-    9409,
-    null,
-    'c',
-    '{"id":5}'
-  ]
+  [feature0Parsed, 1, 94107, 94107, 11, 'a', {id: 1}],
+  [feature1Parsed, 2, 94105, 94105, 4, 'b', {id: 2}],
+  [feature2, 3, 94109, 94109, 20, null, {id: 3}],
+  [feature3Parsed, 4, 94111, 9411, null, 'c', {id: 4}],
+  [feature4Parsed, 5, 74107, 9409, null, 'c', {id: 5}]
 ];
 
 export const geoBounds = [
@@ -302,8 +256,8 @@ export const geoJsonWithStyle = {
     {
       type: 'Feature',
       properties: {
-        fillColor: [1,2,3],
-        lineColor: [4,5,6],
+        fillColor: [1, 2, 3],
+        lineColor: [4, 5, 6],
         lineWidth: 1,
         elevation: 10,
         radius: 5
@@ -313,8 +267,8 @@ export const geoJsonWithStyle = {
     {
       type: 'Feature',
       properties: {
-        fillColor: [7,8,9],
-        lineColor: [4,5,6],
+        fillColor: [7, 8, 9],
+        lineColor: [4, 5, 6],
         lineWidth: 3,
         elevation: 10,
         radius: 5
@@ -324,8 +278,8 @@ export const geoJsonWithStyle = {
     {
       type: 'Feature',
       properties: {
-        fillColor: [1,2,3],
-        lineColor: [4,5,6],
+        fillColor: [1, 2, 3],
+        lineColor: [4, 5, 6],
         lineWidth: 4,
         elevation: 10,
         radius: 5
@@ -375,5 +329,7 @@ export const updatedGeoJsonLayer = {
     fixedRadius: false
   }
 };
-export const mappedTripValue = geojsonData.features.map(f => f.properties.TRIPS);
+export const mappedTripValue = geojsonData.features.map(
+  f => f.properties.TRIPS
+);
 export const tripDomain = extent(mappedTripValue);
