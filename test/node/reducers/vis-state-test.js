@@ -1509,7 +1509,6 @@ test('#visStateReducer -> UPDATE_VIS_DATA.4.Geojson -> geojson data', t => {
 
   t.end();
 });
-*/
 
 test('#visStateReducer -> UPDATE_VIS_DATA.4.Geojson -> with config', t => {
   const initialVisState = CloneDeep(INITIAL_VIS_STATE);

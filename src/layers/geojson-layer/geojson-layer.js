@@ -361,10 +361,6 @@ export default class GeoJsonLayer extends Layer {
     return this;
   }
 
-<<<<<<< HEAD
-  renderLayer({data, idx, objectHovered, mapState, interactionConfig}) {
-    const {fixedRadius} = this.meta;
-=======
   renderLayer({
     data,
     idx,
@@ -373,8 +369,7 @@ export default class GeoJsonLayer extends Layer {
     mapState,
     interactionConfig
   }) {
-    const {lightSettings, fixedRadius} = this.meta;
->>>>>>> [Feat] Gpu data filter 4 (#604)
+    const {fixedRadius} = this.meta;
     const radiusScale = this.getRadiusScaleByZoom(mapState, fixedRadius);
     const zoomFactor = this.getZoomFactor(mapState);
     const {visConfig} = this.config;
@@ -382,10 +377,6 @@ export default class GeoJsonLayer extends Layer {
     const layerProps = {
       // multiplier applied just so it being consistent with previously saved maps
       lineWidthScale: visConfig.thickness * zoomFactor * 8,
-<<<<<<< HEAD
-=======
-      lineWidthMinPixels: 0,
->>>>>>> [Feat] Gpu data filter 4 (#604)
       elevationScale: visConfig.elevationScale,
       pointRadiusScale: radiusScale,
       lineMiterLimit: 4,
@@ -459,13 +450,8 @@ export default class GeoJsonLayer extends Layer {
         wireframe: visConfig.wireframe,
         lineMiterLimit: 2,
         rounded: true,
-<<<<<<< HEAD
-        updateTriggers
-=======
-        lightSettings,
         updateTriggers,
         _subLayerProps: subLayerProps
->>>>>>> [Feat] Gpu data filter 4 (#604)
       }),
       ...(this.isLayerHovered(objectHovered) && !visConfig.enable3d
         ? [

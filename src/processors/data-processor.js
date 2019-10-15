@@ -478,7 +478,7 @@ export function processGeojson(rawData) {
   for (let i = 0; i < normalizedGeojson.features.length; i++) {
     const f = normalizedGeojson.features[i];
     if (f.geometry) {
-      accu.push({
+      allDataRows.push({
         // add feature to _geojson field
         _geojson: f,
         ...(f.properties || {})

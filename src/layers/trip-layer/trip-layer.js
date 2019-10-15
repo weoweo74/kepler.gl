@@ -22,6 +22,7 @@ import memoize from 'lodash.memoize';
 import uniq from 'lodash.uniq';
 import Layer from '../base-layer';
 import {TripsLayer as DeckGLTripsLayer} from 'deck.gl';
+import GeojsonSubLayers from 'deckgl-layers/geojson-layer/geojson-sub-layer';
 
 import {GEOJSON_FIELDS} from 'constants/default-settings';
 import TripLayerIcon from './trip-layer-icon';
@@ -60,6 +61,12 @@ export const tripVisConfigs = {
 export const geoJsonRequiredColumns = ['geojson'];
 export const featureAccessor = ({geojson}) => d => d[geojson.fieldIdx];
 export const featureResolver = ({geojson}) => geojson.fieldIdx;
+/**
+ * From Deck.gl geojson layer
+ * Returns the source feature that was passed to `separateGeojsonFeatures`
+ * feature provided by the user is under `sourceFeature.feature`
+ */
+const unwrapSourceFeature = (wrappedFeature) => wrappedFeature.sourceFeature.feature;
 
 export default class TripLayer extends Layer {
   constructor(props) {
@@ -171,9 +178,14 @@ export default class TripLayer extends Layer {
     return allData[object.properties.index];
   }
 
+  calculateDataAttribute(allData, filteredIndex, getPosition) {
+    return filteredIndex
+    .map(i => this.dataToFeature[i])
+    .filter(d => d && d.geometry.type === 'LineString');
+  }
   // TODO: fix complexity
   /* eslint-disable complexity */
-  formatLayerData(_, allData, filteredIndex, oldLayerData, opt = {}) {
+  formatLayerData(datasets, oldLayerData, opt = {}) {
     // to-do: parse segment from allData
     const {
       colorScale,
@@ -187,32 +199,8 @@ export default class TripLayer extends Layer {
     } = this.config;
 
     const {stroked, colorRange, sizeRange} = visConfig;
-
-    const getFeature = this.getPositionAccessor(this.config.column);
-
-    // geojson feature are object, if doesn't exists
-    // create it and save to layer
-    if (!oldLayerData || oldLayerData.getFeature !== getFeature) {
-      this.updateLayerMeta(allData, getFeature);
-    }
-
-    let geojsonData;
-
-    if (
-      oldLayerData &&
-      oldLayerData.data &&
-      opt.sameData &&
-      oldLayerData.getFeature === getFeature
-    ) {
-      // no need to create a new array of data
-      // use updateTriggers to selectively re-calculate attributes
-      geojsonData = oldLayerData.data;
-    } else {
-      // filteredIndex is a reference of index in allData which can map to feature
-      geojsonData = filteredIndex
-        .map(i => this.dataToFeature[i])
-        .filter(d => d && d.geometry.type === 'LineString');
-    }
+    const {filteredIndex, allData, gpuFilter} = datasets[this.config.dataId];
+    const {data} = this.updateData(allData, filteredIndex, oldLayerData);
 
     // color
     const cScale =
@@ -228,9 +216,16 @@ export default class TripLayer extends Layer {
       sizeField &&
       stroked &&
       this.getVisChannelScale(sizeScale, sizeDomain, sizeRange);
+    // access feature properties from geojson sub layer
+    const getDataForGpuFilter = f => allData[unwrapSourceFeature(f).properties.index];
+    const getIndexForGpuFilter = f => unwrapSourceFeature(f).properties.index;
 
     return {
-      data: geojsonData,
+      data,
+      getFilterValue: gpuFilter.filterValueAccessor(
+        getIndexForGpuFilter,
+        getDataForGpuFilter
+      ),
       getPath: d => d.geometry.coordinates,
       getTimestamps: d => this.dataToTimeStamp[d.properties.index],
       getColor: d =>
@@ -292,7 +287,7 @@ export default class TripLayer extends Layer {
     return this;
   }
 
-  renderLayer({data, idx, mapState, animationConfig}) {
+  renderLayer({data, idx, gpuFilter, mapState, animationConfig}) {
     const {visConfig} = this.config;
     const zoomFactor = this.getZoomFactor(mapState);
 
@@ -312,6 +307,17 @@ export default class TripLayer extends Layer {
         domain0: animationConfig.domain[0]
       }
     };
+
+    const subLayerProps = {
+      'line-strings': {
+        ...GeojsonSubLayers['line-strings'],
+        getFilterValue: data.getFilterValue,
+        filterRange: gpuFilter.filterRange,
+        updateTriggers: {
+          getFilterValue: gpuFilter.filterValueUpdateTriggers
+        }
+      }
+    }
 
     return [
       new DeckGLTripsLayer({
@@ -336,7 +342,8 @@ export default class TripLayer extends Layer {
         },
         trailLength: visConfig.trailLength * 1000,
         currentTime: animationConfig.currentTime - animationConfig.domain[0],
-        updateTriggers
+        updateTriggers,
+        _subLayerProps: subLayerProps
       })
     ];
   }
