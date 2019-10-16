@@ -27,7 +27,8 @@ import {hexToRgb} from 'utils/color-utils';
 import {
   getGeojsonDataMaps,
   getGeojsonBounds,
-  getGeojsonFeatureTypes
+  getGeojsonFeatureTypes,
+  parseGeoJsonRawFeature
 } from './geojson-utils';
 import GeojsonLayerIcon from './geojson-layer-icon';
 import {
@@ -35,6 +36,7 @@ import {
   HIGHLIGH_COLOR_3D,
   CHANNEL_SCALES
 } from 'constants/default-settings';
+import {findFirstNoneEmpty} from 'utils/data-utils';
 
 export const geojsonVisConfigs = {
   opacity: 'opacity',
@@ -142,11 +144,16 @@ export default class GeoJsonLayer extends Layer {
     return this.getFeature(this.config.columns);
   }
 
-  static findDefaultLayerProps({label, fields = []}) {
-    const geojsonColumns = fields.filter(f => f.type === 'geojson').map(f => f.name);
+  static findDefaultLayerProps({label, fields = [], allData = []}) {
+    const geojsonColumns = fields.filter(f => f.type === 'geojson')
+    // since geojson column can be object or array. test if column contains valid geojson
+    const validGeojsonColumns = geojsonColumns.filter(f => {
+      const sample = findFirstNoneEmpty(allData, 10,  d => d[f.tableFieldIndex - 1]);
+      return sample.length && sample.every(parseGeoJsonRawFeature)
+    }).map(f => f.name);
 
     const defaultColumns = {
-      geojson: uniq([...GEOJSON_FIELDS.geojson, ...geojsonColumns])
+      geojson: uniq([...GEOJSON_FIELDS.geojson, ...validGeojsonColumns])
     };
 
     const foundColumns = this.findDefaultColumnField(defaultColumns, fields);

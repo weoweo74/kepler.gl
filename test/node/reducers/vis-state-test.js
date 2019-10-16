@@ -631,7 +631,7 @@ test('#visStateReducer -> LAYER_CONFIG_CHANGE -> isVisible -> animationConfig', 
   t.end();
 });
 
-test.only('#visStateReducer -> LAYER_CONFIG_CHANGE -> isVisible -> splitMaps', t => {
+test('#visStateReducer -> LAYER_CONFIG_CHANGE -> isVisible -> splitMaps', t => {
   const initialState = StateWSplitMaps.visState;
   const layer = initialState.layers[0];
 
@@ -916,10 +916,10 @@ test('#visStateReducer -> REMOVE_FILTER', t => {
             filterMax: [37.75, 0, 0, 0]
           },
           filterValueUpdateTriggers: {
-            0: 'start_point_lng',
-            1: null,
-            2: null,
-            3: null
+            gpuFilter_0: 'start_point_lng',
+            gpuFilter_1: null,
+            gpuFilter_2: null,
+            gpuFilter_3: null
           },
           filterValueAccessor: {
             inputs: [
@@ -949,10 +949,10 @@ test('#visStateReducer -> REMOVE_FILTER', t => {
             filterMax: [0, 0, 0, 0]
           },
           filterValueUpdateTriggers: {
-            0: null,
-            1: null,
-            2: null,
-            3: null
+            gpuFilter_0: null,
+            gpuFilter_1: null,
+            gpuFilter_2: null,
+            gpuFilter_3: null
           },
           filterValueAccessor: {
             inputs: [
@@ -1127,7 +1127,12 @@ test('#visStateReducer -> UPDATE_VIS_DATA.2 -> to empty state', t => {
           filterMin: [0, 0, 0, 0],
           filterMax: [0, 0, 0, 0]
         },
-        filterValueUpdateTriggers: {0: null, 1: null, 2: null, 3: null},
+        filterValueUpdateTriggers: {
+          gpuFilter_0: null,
+          gpuFilter_1: null,
+          gpuFilter_2: null,
+          gpuFilter_3: null
+        },
         filterValueAccessor: {
           inputs: ['a', 'b', 'c', 'd', 'e'],
           result: [0, 0, 0, 0]
@@ -1304,10 +1309,10 @@ test('#visStateReducer -> UPDATE_VIS_DATA.3 -> merge w/ existing state', t => {
           filterMax: [0, 0, 0, 0]
         },
         filterValueUpdateTriggers: {
-          0: null,
-          1: null,
-          2: null,
-          3: null
+          gpuFilter_0: null,
+          gpuFilter_1: null,
+          gpuFilter_2: null,
+          gpuFilter_3: null
         },
         filterValueAccessor: {
           inputs: [
@@ -1444,10 +1449,10 @@ test('#visStateReducer -> UPDATE_VIS_DATA.4.Geojson -> geojson data', t => {
         filterMax: [0, 0, 0, 0]
       },
       filterValueUpdateTriggers: {
-        0: null,
-        1: null,
-        2: null,
-        3: null
+        gpuFilter_0: null,
+        gpuFilter_1: null,
+        gpuFilter_2: null,
+        gpuFilter_3: null
       },
       filterValueAccessor: {
         inputs: [
@@ -1658,10 +1663,10 @@ test('#visStateReducer -> UPDATE_VIS_DATA -> mergeFilters', t => {
           filterMax: [mockFilter.value[1], 0, 0, 0]
         },
         filterValueUpdateTriggers: {
-          0: mockFilter.name,
-          1: null,
-          2: null,
-          3: null
+          gpuFilter_0: mockFilter.name,
+          gpuFilter_1: null,
+          gpuFilter_2: null,
+          gpuFilter_3: null
         },
         filterValueAccessor: {
           inputs: [{data: mockRawData.rows[0], index: 1}],
@@ -1979,10 +1984,10 @@ test('#visStateReducer -> setFilter.dynamicDomain & cpu', t => {
         filterMax: [0, 0, 0, 0]
       },
       filterValueUpdateTriggers: {
-        0: null,
-        1: null,
-        2: null,
-        3: null
+        gpuFilter_0: null,
+        gpuFilter_1: null,
+        gpuFilter_2: null,
+        gpuFilter_3: null
       },
       filterValueAccessor: {
         inputs: [
@@ -2176,10 +2181,10 @@ test('#visStateReducer -> setFilter.dynamicDomain & gpu', t => {
         filterMax: [20, 0, 0, 0]
       },
       filterValueUpdateTriggers: {
-        0: 'TRIPS',
-        1: null,
-        2: null,
-        3: null
+        gpuFilter_0: 'TRIPS',
+        gpuFilter_1: null,
+        gpuFilter_2: null,
+        gpuFilter_3: null
       },
       filterValueAccessor: {
         inputs: [
@@ -2371,10 +2376,10 @@ test('#visStateReducer -> setFilter.fixedDomain & DynamicDomain & gpu & cpu', t 
         filterMax: [1474071740000, 0, 0, 0]
       },
       filterValueUpdateTriggers: {
-        0: 'gps_data.utc_timestamp',
-        1: null,
-        2: null,
-        3: null
+        gpuFilter_0: 'gps_data.utc_timestamp',
+        gpuFilter_1: null,
+        gpuFilter_2: null,
+        gpuFilter_3: null
       },
       filterValueAccessor: {
         inputs: [
@@ -2430,10 +2435,10 @@ test('#visStateReducer -> setFilter.fixedDomain & DynamicDomain & gpu & cpu', t 
         filterMax: [1474071740000, 0, 0, 0]
       },
       filterValueUpdateTriggers: {
-        0: 'gps_data.utc_timestamp',
-        1: null,
-        2: null,
-        3: null
+        gpuFilter_0: 'gps_data.utc_timestamp',
+        gpuFilter_1: null,
+        gpuFilter_2: null,
+        gpuFilter_3: null
       },
       filterValueAccessor: {
         inputs: [
