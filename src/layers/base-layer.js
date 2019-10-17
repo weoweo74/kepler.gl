@@ -20,6 +20,9 @@
 
 import {console as Console} from 'global/window';
 import keymirror from 'keymirror';
+import {DataFilterExtension} from '@deck.gl/extensions';
+import {COORDINATE_SYSTEM} from '@deck.gl/core';
+
 import DefaultLayerIcon from './default-layer-icon';
 import {diffUpdateTriggers} from './layer-update';
 
@@ -30,7 +33,8 @@ import {
   CHANNEL_SCALES,
   FIELD_OPTS,
   SCALE_FUNC,
-  CHANNEL_SCALE_SUPPORTED_FIELDS
+  CHANNEL_SCALE_SUPPORTED_FIELDS,
+  MAX_GPU_FILTERS
 } from 'constants/default-settings';
 import {COLOR_RANGES} from 'constants/color-ranges';
 import {DataVizColors} from 'constants/custom-color-ranges';
@@ -67,6 +71,7 @@ import {
  * @type {number}
  */
 const MAX_SAMPLE_SIZE = 5000;
+const dataFilterExtension = new DataFilterExtension({filterSize: MAX_GPU_FILTERS});
 
 export const OVERLAY_TYPE = keymirror({
   deckgl: null,
@@ -1025,5 +1030,43 @@ export default class Layer {
 
   shouldCalculateLayerData(props) {
     return props.some(p => !this.noneLayerDataAffectingProps.includes(p));
+  }
+
+  getBrushingExtensionProps(interactionConfig) {
+    const {brush} = interactionConfig;
+
+    return {
+      // brushing
+      autoHighlight: !brush.enabled,
+      brushingRadius: brush.config.size * 1000,
+      brushingTarget: 'source',
+      brushingEnabled: brush.enabled
+    }
+  }
+
+  getDefaultDeckLayerProps({idx, gpuFilter, mapState}) {
+    return {
+      id: this.id,
+      idx,
+      coordinateSystem: COORDINATE_SYSTEM.LNGLAT_DEPRECATED,
+      pickable: true,
+      wrapLongitude: true,
+      parameters: {depthTest: Boolean(mapState.dragRotate || this.config.visConfig.enable3d)},
+      // visconfig
+      opacity: this.config.visConfig.opacity,
+      highlightColor: this.config.highlightColor,
+      // data filtering
+      extensions: [dataFilterExtension],
+      filterRange: gpuFilter.filterRange
+    }
+  }
+
+  getDefaultHoverLayerProps() {
+    return {
+      id: `${this.id}-hovered`,
+      pickable: false,
+      wrapLongitude: true,
+      coordinateSystem: COORDINATE_SYSTEM.LNGLAT_DEPRECATED
+    }
   }
 }

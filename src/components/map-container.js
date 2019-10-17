@@ -295,17 +295,17 @@ export default function MapContainerFactory(MapPopover, MapControl) {
         clicked,
         mapState,
         interactionConfig,
-        mousePos,
+        // mousePos,
         animationConfig
       } = this.props;
       const layer = layers[idx];
       const data = layerData[idx];
       const {gpuFilter} = datasets[layer.config.dataId] || {};
       // console.log(datasets[layer.config.dataId])
-      const layerInteraction = {
-        mousePositionXY: mousePos.mousePosition,
-        wrapLongitude: true
-      };
+      // const layerInteraction = {
+      //   mousePositionXY: mousePos.mousePosition,
+      //   wrapLongitude: true
+      // };
 
       const objectHovered = clicked || hoverInfo;
       const layerCallbacks = {
@@ -319,7 +319,7 @@ export default function MapContainerFactory(MapPopover, MapControl) {
         idx,
         interactionConfig,
         layerCallbacks,
-        layerInteraction,
+        // layerInteraction,
         mapState,
         animationConfig,
         objectHovered

@@ -22,7 +22,6 @@ import memoize from 'lodash.memoize';
 import uniq from 'lodash.uniq';
 import Layer from '../base-layer';
 import {TripsLayer as DeckGLTripsLayer} from 'deck.gl';
-import GeojsonSubLayers from 'deckgl-layers/geojson-layer/geojson-sub-layer';
 
 import {GEOJSON_FIELDS} from 'constants/default-settings';
 import TripLayerIcon from './trip-layer-icon';
@@ -61,12 +60,6 @@ export const tripVisConfigs = {
 export const geoJsonRequiredColumns = ['geojson'];
 export const featureAccessor = ({geojson}) => d => d[geojson.fieldIdx];
 export const featureResolver = ({geojson}) => geojson.fieldIdx;
-/**
- * From Deck.gl geojson layer
- * Returns the source feature that was passed to `separateGeojsonFeatures`
- * feature provided by the user is under `sourceFeature.feature`
- */
-const unwrapSourceFeature = (wrappedFeature) => wrappedFeature.sourceFeature.feature;
 
 export default class TripLayer extends Layer {
   constructor(props) {
@@ -217,8 +210,8 @@ export default class TripLayer extends Layer {
       stroked &&
       this.getVisChannelScale(sizeScale, sizeDomain, sizeRange);
     // access feature properties from geojson sub layer
-    const getDataForGpuFilter = f => allData[unwrapSourceFeature(f).properties.index];
-    const getIndexForGpuFilter = f => unwrapSourceFeature(f).properties.index;
+    const getDataForGpuFilter = f => allData[f.properties.index];
+    const getIndexForGpuFilter = f => f.properties.index;
 
     return {
       data,
@@ -287,7 +280,13 @@ export default class TripLayer extends Layer {
     return this;
   }
 
-  renderLayer({data, idx, gpuFilter, mapState, animationConfig}) {
+  renderLayer(opts) {
+    const {
+      data,
+      gpuFilter,
+      mapState,
+      animationConfig
+    } = opts;
     const {visConfig} = this.config;
     const zoomFactor = this.getZoomFactor(mapState);
 
@@ -305,45 +304,26 @@ export default class TripLayer extends Layer {
       getTimestamps: {
         columns: this.config.columns,
         domain0: animationConfig.domain[0]
-      }
+      },
+      getFilterValue: gpuFilter.filterValueUpdateTriggers
     };
-
-    const subLayerProps = {
-      'line-strings': {
-        ...GeojsonSubLayers['line-strings'],
-        getFilterValue: data.getFilterValue,
-        filterRange: gpuFilter.filterRange,
-        updateTriggers: {
-          getFilterValue: gpuFilter.filterValueUpdateTriggers
-        }
-      }
-    }
+    const defaultLayerProps = this.getDefaultDeckLayerProps(opts);
 
     return [
       new DeckGLTripsLayer({
-        id: this.id,
-        idx,
-        data: data.data,
-        getPath: data.getPath,
-        getColor: data.getColor,
+        ...defaultLayerProps,
+        ...data,
         getTimestamps: d =>
           data.getTimestamps(d).map(ts => ts - animationConfig.domain[0]),
-        opacity: this.config.visConfig.opacity,
         widthScale: this.config.visConfig.thickness * zoomFactor * 8,
-        highlightColor: this.config.highlightColor,
-
-        getWidth: data.getWidth,
         rounded: true,
-        pickable: true,
-        autoHighlight: true,
         parameters: {
           depthTest: mapState.dragRotate,
           depthMask: false
         },
         trailLength: visConfig.trailLength * 1000,
         currentTime: animationConfig.currentTime - animationConfig.domain[0],
-        updateTriggers,
-        _subLayerProps: subLayerProps
+        updateTriggers
       })
     ];
   }

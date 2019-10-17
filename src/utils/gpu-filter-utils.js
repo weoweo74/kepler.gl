@@ -92,13 +92,10 @@ export function resetFilterGpuMode(filters) {
 
 /**
  * Initial filter uniform
- * @returns {{filterMin: Array<Number>,filterMax: Array<Number>}}
+ * @returns {Array<Array<Number>>}
  */
 function getEmptyFilterRange() {
-  return {
-    filterMin: new Array(MAX_GPU_FILTERS).fill(0),
-    filterMax: new Array(MAX_GPU_FILTERS).fill(0)
-  };
+  return new Array(MAX_GPU_FILTERS).fill(0).map(d => [0, 0]);
 }
 
 // By default filterValueAccessor expect each datum to be formated as {index, data}
@@ -134,6 +131,7 @@ const getFilterValueAccessor = channels => (
  * @returns {{filterRange: {Object}, filterValueUpdateTriggers: Object, getFilterValue: Function}}
  */
 export function getGpuFilterProps(filters, dataId) {
+  console.log(filters)
   const filterRange = getEmptyFilterRange();
   const triggers = {};
 
@@ -144,8 +142,8 @@ export function getGpuFilterProps(filters, dataId) {
     const filter = filters.find(
       f => f.dataId === dataId && f.gpu && f.gpuChannel === i
     );
-    filterRange.filterMin[i] = filter ? filter.value[0] : 0;
-    filterRange.filterMax[i] = filter ? filter.value[1] : 0;
+    filterRange[i][0] = filter ? filter.value[0] : 0;
+    filterRange[i][1] = filter ? filter.value[1] : 0;
 
     triggers[`gpuFilter_${i}`] = filter ? filter.name : null;
     channels.push(filter);

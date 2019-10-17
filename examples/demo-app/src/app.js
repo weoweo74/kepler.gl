@@ -167,9 +167,8 @@ class App extends Component {
   _loadSampleData() {
     this._loadPointData();
     // this._loadGeojsonData();
-    this._loadTripGeoJson();
+    // this._loadTripGeoJson();
     // this._loadIconData();
-    // this._loadGeojsonData();
     // this._loadH3HexagonData();
   }
 
@@ -181,7 +180,7 @@ class App extends Component {
             label: 'Sample Taxi Trips in New York City',
             id: 'test_trip_data'
           },
-          data: sampleTripData
+          data: processCsvData(testCsvData)
         },
         options: {
           centerMap: true,

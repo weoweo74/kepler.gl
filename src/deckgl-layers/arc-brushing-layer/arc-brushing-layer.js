@@ -58,8 +58,9 @@ function addBrushingVs64Shader(vs) {
 class ArcBrushingLayer extends ArcLayer {
   getShaders() {
     const shaders = super.getShaders();
+
     return {
-      vs: this.is64bitEnabled()
+      vs: this.Fp64Extension
         ? addBrushingVs64Shader(shaders.vs)
         : addBrushingVsShader(shaders.vs),
       fs: shaders.fs,
