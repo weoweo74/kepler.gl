@@ -170,6 +170,7 @@ class App extends Component {
     // this._loadTripGeoJson();
     // this._loadIconData();
     // this._loadH3HexagonData();
+    this._loadScenegraphLayer();
   }
 
   _loadPointData() {
@@ -180,13 +181,45 @@ class App extends Component {
             label: 'Sample Taxi Trips in New York City',
             id: 'test_trip_data'
           },
-          data: processCsvData(testCsvData)
+          data: sampleTripData
         },
         options: {
           centerMap: true,
           readOnly: false
         },
         config: sampleTripDataConfig
+      })
+    );
+  }
+
+  _loadScenegraphLayer() {
+    this.props.dispatch(
+      addDataToMap({
+        datasets: {
+          info: {
+            label: 'Sample Scenegraph Ducks',
+            id: 'test_trip_data'
+          },
+          data: processCsvData(testCsvData)
+        },
+        config: {
+          version: 'v1',
+          config: {
+            visState: {
+              layers: [{
+                type: '3D',
+                config: {
+                  dataId: 'test_trip_data',
+                  columns: {
+                    lat: 'gps_data.lat',
+                    lng: 'gps_data.lng'
+                  },
+                  isVisible: true
+                }
+              }]
+            }
+          }
+        }
       })
     );
   }

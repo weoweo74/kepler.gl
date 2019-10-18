@@ -20,7 +20,7 @@
 
 import uniq from 'lodash.uniq';
 import {BrushingExtension} from '@deck.gl/extensions';
-import {ScatterplotLayer, TextLayer, _MultiIconLayer} from '@deck.gl/layers';
+import {ScatterplotLayer, TextLayer} from '@deck.gl/layers';
 import {getDistanceScales} from 'viewport-mercator-project';
 
 import Layer from '../base-layer';
@@ -350,7 +350,7 @@ export default class PointLayer extends Layer {
       mapState,
       interactionConfig
     } = opts;
-    // const enableBrushing = interactionConfig.brush.enabled;
+
     const radiusScale = this.getRadiusScaleByZoom(mapState);
 
     const layerProps = {
