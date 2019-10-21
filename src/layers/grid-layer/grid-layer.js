@@ -75,16 +75,16 @@ export default class GridLayer extends AggregationLayer {
     return data;
   }
 
-  renderLayer({
-    data,
-    gpuFilter,
-    idx,
-    objectHovered,
-    mapState,
-    interaction,
-    layerCallbacks,
-    layerInteraction
-  }) {
+
+  renderLayer(opts) {
+    const {
+      data,
+      gpuFilter,
+      objectHovered,
+      mapState,
+      layerCallbacks
+    } = opts;
+
     const zoomFactor = this.getZoomFactor(mapState);
     const eleZoomFactor = this.getElevationZoomFactor(mapState);
     const {visConfig} = this.config;
@@ -106,21 +106,14 @@ export default class GridLayer extends AggregationLayer {
 
     return [
       new DeckGLGridLayer({
+        ...this.getDefaultDeckLayerProps(opts),
         ...data,
-        ...layerInteraction,
-        id: this.id,
-        idx,
-        cellSize,
         coverage: visConfig.coverage,
-        // highlight
-        autoHighlight: visConfig.enable3d,
-        highlightColor: HIGHLIGH_COLOR_3D,
 
         // color
         colorRange: this.getColorRange(visConfig.colorRange),
         colorScale: this.config.colorScale,
         sizeScale: this.config.sizeScale,
-        opacity: visConfig.opacity,
         upperPercentile: visConfig.percentile[1],
         lowerPercentile: visConfig.percentile[0],
 
@@ -130,11 +123,6 @@ export default class GridLayer extends AggregationLayer {
         elevationRange: visConfig.sizeRange,
         elevationLowerPercentile: visConfig.elevationPercentile[0],
         elevationUpperPercentile: visConfig.elevationPercentile[1],
-        // parameters
-        parameters: {depthTest: Boolean(visConfig.enable3d || mapState.dragRotate)},
-
-        // render
-        pickable: true,
 
         // callbacks
         onSetColorDomain: layerCallbacks.onSetLayerDomain,
@@ -150,7 +138,6 @@ export default class GridLayer extends AggregationLayer {
       ...(this.isLayerHovered(objectHovered) && !visConfig.enable3d
         ? [
             new GeoJsonLayer({
-              ...layerInteraction,
               id: `${this.id}-hovered`,
               data: [
                 pointToPolygonGeo({

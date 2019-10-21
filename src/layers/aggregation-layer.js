@@ -22,6 +22,8 @@ import memoize from 'lodash.memoize';
 import Layer from './base-layer';
 import {hexToRgb} from 'utils/color-utils';
 import {aggregate} from 'utils/aggregate-utils';
+import {HIGHLIGH_COLOR_3D} from 'constants/default-settings';
+
 import {
   CHANNEL_SCALES,
   FIELD_OPTS,
@@ -52,7 +54,7 @@ export const getValueAggrFunc = (
           const filterValues = getFilterValue(pt);
           return filterValues.every(
             (val, i) =>
-              val >= filterRange.filterMin[i] && val <= filterRange.filterMax[i]
+              val >= filterRange[i][0] && val <= filterRange[i][1]
           )
         })
       : points;
@@ -273,5 +275,16 @@ export default class AggregationLayer extends Layer {
       ...(getColorValue ? {getColorValue} : {}),
       ...(getElevationValue ? {getElevationValue} : {})
     };
+  }
+
+  getDefaultDeckLayerProps(opts) {
+    const baseProp = super.getDefaultDeckLayerProps(opts);
+    return {
+      ...baseProp,
+      highlightColor: HIGHLIGH_COLOR_3D,
+      // gpu data filtering is not supported in aggregation layer
+      extensions: [],
+      autoHighlight: this.config.visConfig.enable3d
+    }
   }
 }

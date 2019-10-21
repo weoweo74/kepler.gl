@@ -131,7 +131,7 @@ const getFilterValueAccessor = channels => (
  * @returns {{filterRange: {Object}, filterValueUpdateTriggers: Object, getFilterValue: Function}}
  */
 export function getGpuFilterProps(filters, dataId) {
-  console.log(filters)
+
   const filterRange = getEmptyFilterRange();
   const triggers = {};
 

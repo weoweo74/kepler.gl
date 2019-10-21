@@ -23,7 +23,6 @@ import {load} from '@loaders.gl/core';
 import {GLTFScenegraphLoader} from '@luma.gl/addons';
 
 import Layer from '../base-layer';
-import memoize from 'lodash.memoize';
 import ScenegraphLayerIcon from './scenegraph-layer-icon';
 import ScenegraphInfoModalFactory from './scenegraph-info-modal';
 
@@ -124,47 +123,8 @@ export default class ScenegraphLayer extends Layer {
     }
     return data;
   }
+
   formatLayerData(datasets, oldLayerData, opt = {}) {
-    // const {columns} = this.config;
-    // const {filteredIndex, allData} = datasets[this.config.dataId];
-
-    // const getPosition = this.getPosition(columns);
-
-    // if (!oldLayerData || oldLayerData.getPosition !== getPosition) {
-    //   this.updateLayerMeta(allData, getPosition);
-    // }
-
-    // let data;
-    // if (
-    //   oldLayerData &&
-    //   oldLayerData.data &&
-    //   opt.sameData &&
-    //   oldLayerData.getPosition === getPosition
-    // ) {
-    //   data = oldLayerData.data;
-    // } else {
-    //   data = filteredIndex.reduce((accu, index) => {
-    //     const pos = getPosition({data: allData[index]});
-
-    //     // if doesn't have point lat or lng, do not add the point
-    //     // deck.gl can't handle position = null
-    //     if (!pos.every(Number.isFinite)) {
-    //       return accu;
-    //     }
-
-    //     accu.push({
-    //       index,
-    //       data: allData[index]
-    //     });
-
-    //     return accu;
-    //   }, []);
-    // }
-
-    // return {
-    //   data,
-    //   getPosition
-    // };
     const {filteredIndex, allData, gpuFilter} = datasets[this.config.dataId];
     const {data} = this.updateData(
       allData,
