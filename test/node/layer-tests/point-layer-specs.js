@@ -344,7 +344,7 @@ test('#PointLayer -> formatLayerData', t => {
 
 test('#PointLayer -> renderLayer', t => {
   const filteredIndex = [0, 2, 4];
-
+  const dataCount = 3;
   const TEST_CASES = [
     {
       name: 'Test render point.1',
@@ -379,28 +379,30 @@ test('#PointLayer -> renderLayer', t => {
         }
       },
 
-      assert: deckLayers => {
+      assert: (deckLayers, layer) => {
         // test instanceAttributes
+
         t.equal(deckLayers.length, 1, 'Should create 1 deck.gl layer');
         const {attributes} = deckLayers[0].state.attributeManager;
 
         t.deepEqual(
           Object.keys(attributes).sort(),
           [
+            'brushingTargets',
+            'filterValues',
             'instanceFillColors',
-            'instanceFilterValues',
             'instanceLineColors',
             'instanceLineWidths',
             'instancePickingColors',
             'instancePositions',
-            'instancePositions64xyLow',
             'instanceRadius'
           ],
           'Should create 8 instance attributes'
         );
+
         // test instancePositions
         t.deepEqual(
-          attributes.instancePositions.value,
+          attributes.instancePositions.value.slice(0, dataCount * 3),
           new Float32Array([
             31.2590542,
             29.9900937,
@@ -417,12 +419,12 @@ test('#PointLayer -> renderLayer', t => {
         // test instanceFillColors
         t.deepEqual(
           attributes.instanceFillColors.value,
-          new Float32Array([1, 2, 3, 255]),
+          new Float32Array([1 / 255, 2 / 255, 3 / 255, 1]),
           'Should calculate correct instanceFillColor'
         );
         // test instanceFilterValues
         t.deepEqual(
-          attributes.instanceFilterValues.value,
+          attributes.filterValues.value.slice(0, dataCount * 4),
           new Float32Array([
             moment.utc(rows[0][0]).valueOf(),
             0,
@@ -443,7 +445,7 @@ test('#PointLayer -> renderLayer', t => {
         // range:[[1, 152, 189], [232, 254, 181], [254, 173, 84], [213, 2, 85]]
         // domain: ['driver_analytics', 'driver_analytics_0', 'driver_gps']
         t.deepEqual(
-          attributes.instanceLineColors.value,
+          attributes.instanceLineColors.value.slice(0, dataCount * 4),
           new Float32Array([
             232,
             254,
@@ -526,24 +528,10 @@ test('#PointLayer -> renderLayer', t => {
         t.equal(deckLayers.length, 1, 'Should create 1 deck.gl layer');
         const {attributes} = deckLayers[0].state.attributeManager;
 
-        t.deepEqual(
-          Object.keys(attributes).sort(),
-          [
-            'instanceFillColors',
-            'instanceFilterValues',
-            'instanceLineColors',
-            'instanceLineWidths',
-            'instancePickingColors',
-            'instancePositions',
-            'instancePositions64xyLow',
-            'instanceRadius'
-          ],
-          'Should create 8 instance attributes'
-        );
         // test instancePositions
         // 0, 1, 4
         t.deepEqual(
-          attributes.instancePositions.value,
+          attributes.instancePositions.value.slice(0, dataCount * 3),
           new Float32Array([
             31.2590542,
             29.9900937,
@@ -559,7 +547,7 @@ test('#PointLayer -> renderLayer', t => {
         );
         // test instanceFillColors
         t.deepEqual(
-          attributes.instanceFillColors.value,
+          attributes.instanceFillColors.value.slice(0, dataCount * 4),
           // i: 0, 1, 4,
           // 1, null, 5
           new Float32Array([5, 5, 5, 255, 0, 0, 0, 0, 6, 6, 6, 255]),
@@ -568,7 +556,7 @@ test('#PointLayer -> renderLayer', t => {
         // test instanceFilterValues
         // i: 0, 1, 4,
         t.deepEqual(
-          attributes.instanceFilterValues.value,
+          attributes.filterValues.value.slice(0, dataCount * 4),
           new Float32Array([
             Number.MIN_SAFE_INTEGER,
             0,
@@ -589,7 +577,7 @@ test('#PointLayer -> renderLayer', t => {
         // i: 0, 1, 4,
         // domain: ['driver_analytics', 'driver_analytics_0', 'driver_gps']
         t.deepEqual(
-          attributes.instanceLineColors.value,
+          attributes.instanceLineColors.value.slice(0, dataCount * 4),
           new Float32Array([2, 2, 2, 255, 0, 0, 0, 0, 1, 1, 1, 255]),
           'Should calculate correct instanceLineColors'
         );
@@ -602,7 +590,7 @@ test('#PointLayer -> renderLayer', t => {
         // test instanceRadius
         // domain: [1, 12124] range: [0, 500] scale: sqrt
         t.deepEqual(
-          attributes.instanceRadius.value,
+          attributes.instanceRadius.value.slice(0, dataCount),
           [0, 0, 0.5664370059967041],
           'Should calculate correct instanceRadius'
         );

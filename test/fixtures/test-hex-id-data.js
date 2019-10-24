@@ -295,7 +295,7 @@ export const expectedMergedDataset = {
     }
   ],
   gpuFilter: {
-    filterRange: {filterMin: [11.2, 0, 0, 0], filterMax: [28, 0, 0, 0]},
+    filterRange: [[11.2, 28], [0, 0], [0, 0], [0, 0]],
     filterValueUpdateTriggers: {
       gpuFilter_0: 'value',
       gpuFilter_1: null,

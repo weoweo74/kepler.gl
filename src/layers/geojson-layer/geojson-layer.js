@@ -67,6 +67,8 @@ export const geojsonVisConfigs = {
 export const geoJsonRequiredColumns = ['geojson'];
 export const featureAccessor = ({geojson}) => d => d[geojson.fieldIdx];
 export const defaultElevation = 500;
+export const defaultLineWidth = 1;
+export const defaultRadius = 1;
 
 export default class GeoJsonLayer extends Layer {
   constructor(props) {
@@ -249,6 +251,7 @@ export default class GeoJsonLayer extends Layer {
         strokeColorDomain,
         strokeColorRange.colors.map(hexToRgb)
       );
+
     // calculate stroke scale - if stroked = true
     const sScale =
       sizeField &&
@@ -299,7 +302,7 @@ export default class GeoJsonLayer extends Layer {
               sizeField,
               0
             )
-          : d.properties.lineWidth || 1,
+          : d.properties.lineWidth || defaultLineWidth,
       getElevation: d =>
         eScale
           ? this.getEncodedChannelValue(
@@ -317,7 +320,7 @@ export default class GeoJsonLayer extends Layer {
               radiusField,
               0
             )
-          : d.properties.radius || 1
+          : d.properties.radius || defaultRadius
     };
   }
   /* eslint-enable complexity */

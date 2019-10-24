@@ -23,7 +23,7 @@ import AggregationLayer from '../aggregation-layer';
 import EnhancedCPUGridLayer from 'deckgl-layers/grid-layer/enhanced-cpu-grid-layer';
 import {pointToPolygonGeo} from './grid-utils';
 import GridLayerIcon from './grid-layer-icon';
-import {HIGHLIGH_COLOR_3D} from 'constants/default-settings';
+// import {HIGHLIGH_COLOR_3D} from 'constants/default-settings';
 
 export const gridVisConfigs = {
   opacity: 'opacity',
@@ -74,7 +74,6 @@ export default class GridLayer extends AggregationLayer {
 
     return data;
   }
-
 
   renderLayer(opts) {
     const {

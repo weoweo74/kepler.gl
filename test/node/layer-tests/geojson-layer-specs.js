@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 
 import test from 'tape';
-import GeojsonLayer, {defaultElevation} from 'layers/geojson-layer/geojson-layer';
+import GeojsonLayer, {defaultElevation, defaultLineWidth, defaultRadius} from 'layers/geojson-layer/geojson-layer';
 
 import {
   updatedLayerSimplifiedShape,
@@ -33,7 +33,9 @@ import {
   testRenderLayerCases,
   prepareGeojsonDataset
 } from 'test/helpers/layer-utils';
-import {updatedGeoJsonLayer} from 'test/fixtures/geojson';
+import {updatedGeoJsonLayer, geoJsonWithStyle} from 'test/fixtures/geojson';
+import {createNewDataEntry} from 'utils/dataset-utils';
+import {processGeojson} from 'processors/data-processor';
 
 test('#GeojsonLayer -> constructor', t => {
   const TEST_CASES = {
@@ -60,7 +62,7 @@ test('#GeojsonLayer -> constructor', t => {
   t.end();
 });
 
-test('#GeojsonLayer -> formatLayerData', t => {
+test.only('#GeojsonLayer -> formatLayerData', t => {
   const filteredIndex = [0, 2, 4];
 
   const TEST_CASES = [
@@ -115,35 +117,35 @@ test('#GeojsonLayer -> formatLayerData', t => {
           expectedLayerData.data,
           'should format correct geojson layerData'
         );
-        t.equal(
-          typeof layerData.getElevation,
-          'function',
-          'getElevation should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getElevation),
+          [defaultElevation, defaultElevation],
+          'getElevation should return correct value'
         );
-        t.equal(
-          typeof layerData.getFillColor,
-          'function',
-          'getFillColor should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getFillColor),
+          [[1, 2, 3], [1, 2, 3]],
+          'getFillColor should return correct value'
         );
-        t.equal(
-          typeof layerData.getFilterValue,
-          'function',
-          'getFilterValue should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getFilterValue),
+          [[Number.MIN_SAFE_INTEGER, 0, 0, 0], [10, 0, 0, 0]],
+          'getFilterValue should return correct value'
         );
-        t.equal(
-          typeof layerData.getLineColor,
-          'function',
-          'getLineColor should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getLineColor),
+          [[1, 2, 3], [1, 2, 3]],
+          'getLineColor should return correct value'
         );
-        t.equal(
-          typeof layerData.getLineWidth,
-          'function',
-          'getLineWidth should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getLineWidth),
+          [defaultLineWidth, defaultLineWidth],
+          'getLineWidth should return correct value'
         );
-        t.equal(
-          typeof layerData.getRadius,
-          'function',
-          'getRadius should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getRadius),
+          [defaultRadius, defaultRadius],
+          'getRadius should return correct value'
         );
 
         // meta
@@ -170,7 +172,25 @@ test('#GeojsonLayer -> formatLayerData', t => {
           label: 'some geometry file',
           columns: {
             geojson: 'simplified_shape'
-          }
+          },
+          visConfig: {
+            stroked: true,
+            enable3d: true,
+            colorRange: {
+              colors: ['#010101', '#020202', '#030303']
+            },
+            strokeColorRange: {
+              colors: ['#040404', '#050505', '#060606']
+            }
+          },
+          // color by c_zip_type(string)
+          colorField: preparedGeoDataset.fields.find(f => f.name === 'c_zip_type'),
+          strokeColorField: preparedGeoDataset.fields.find(f => f.name === 'c_zip_type'),
+
+          // stroke by c_number(real)
+          sizeField: preparedGeoDataset.fields.find(f => f.name === 'c_number'),
+          // stroke by a_zip(int)
+          heightField: preparedGeoDataset.fields.find(f => f.name === 'a_zip')
         }
       },
       datasets: {
@@ -181,7 +201,6 @@ test('#GeojsonLayer -> formatLayerData', t => {
       },
       assert: result => {
         const {layerData, layer} = result;
-
         const expectedLayerData = {
           data: [
             updatedLayerSimplifiedShape.dataToFeature[0],
@@ -212,35 +231,46 @@ test('#GeojsonLayer -> formatLayerData', t => {
           expectedLayerData.data,
           'should format correct geojson layerData'
         );
-        t.equal(
-          typeof layerData.getElevation,
-          'function',
-          'getElevation should be a function'
+        t.deepEqual(
+          // by a_zip
+          // [7014, 7023, 7416] -> [0, 500]
+          layerData.data.map(layerData.getElevation),
+          [0, 9/402*500, 500],
+          'getElevation should return correct value'
         );
-        t.equal(
-          typeof layerData.getFillColor,
-          'function',
-          'getFillColor should be a function'
+        t.deepEqual(
+          // by c_zip_type
+          // 'C_Medium_High' null  'A_Low_Rural',
+          layerData.data.map(layerData.getFillColor),
+          [[2, 2, 2], [0, 0, 0, 0], [1, 1, 1]],
+          'getFillColor should return correct value'
         );
-        t.equal(
-          typeof layerData.getFilterValue,
-          'function',
-          'getFilterValue should be a function'
+
+        t.deepEqual(
+          // by m_rate
+          // 7.5 null 10
+          layerData.data.map(layerData.getFilterValue),
+          [[7.5, 0, 0, 0], [Number.MIN_SAFE_INTEGER, 0, 0, 0], [10, 0, 0, 0]],
+          'getFilterValue should return correct value'
         );
-        t.equal(
-          typeof layerData.getLineColor,
-          'function',
-          'getLineColor should be a function'
+        t.deepEqual(
+          // by c_zip_type
+          // 'C_Medium_High' null  'A_Low_Rural',
+          layerData.data.map(layerData.getLineColor),
+          [[5, 5, 5], [0, 0, 0, 0], [4, 4, 4]],
+          'getLineColor should return correct value'
         );
-        t.equal(
-          typeof layerData.getLineWidth,
-          'function',
-          'getLineWidth should be a function'
+        t.deepEqual(
+          // c_number
+          // 29.1, 23.8, 13.8 -> [0, 10]
+          layerData.data.map(layerData.getLineWidth),
+          [9.935064935064936, 6.493506493506494, 0],
+          'getLineWidth should return correct value'
         );
-        t.equal(
-          typeof layerData.getRadius,
-          'function',
-          'getRadius should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getRadius),
+          [1, 1, 1],
+          'getRadius should return correct value'
         );
         // meta
         t.deepEqual(
@@ -266,7 +296,8 @@ test('#GeojsonLayer -> formatLayerData', t => {
           label: 'some geometry file',
           columns: {
             geojson: '_geojson'
-          }
+          },
+          color: [5, 5, 5]
         }
       },
       datasets: {
@@ -308,35 +339,131 @@ test('#GeojsonLayer -> formatLayerData', t => {
           expectedLayerData.data,
           'should format correct geojson layerData'
         );
-        t.equal(
-          typeof layerData.getElevation,
-          'function',
-          'getElevation should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getElevation),
+          [defaultElevation, defaultElevation, defaultElevation],
+          'getElevation should return correct value'
         );
-        t.equal(
-          typeof layerData.getFillColor,
-          'function',
-          'getFillColor should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getFillColor),
+          [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
+          'getFillColor should return correct value'
         );
-        t.equal(
-          typeof layerData.getFilterValue,
-          'function',
-          'getFilterValue should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getFilterValue),
+          [[11, 0, 0, 0], [20, 0, 0, 0], [Number.MIN_SAFE_INTEGER, 0, 0, 0]],
+          'getFilterValue should return correct value'
         );
-        t.equal(
-          typeof layerData.getLineColor,
-          'function',
-          'getLineColor should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getLineColor),
+          [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
+          'getLineColor should return correct value'
         );
-        t.equal(
-          typeof layerData.getLineWidth,
-          'function',
-          'getLineWidth should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getLineWidth),
+          [],
+          'getLineWidth should return correct value'
         );
-        t.equal(
-          typeof layerData.getRadius,
-          'function',
-          'getRadius should be a function'
+        t.deepEqual(
+          layerData.data.map(layerData.getRadius),
+          [defaultLineWidth, defaultLineWidth, defaultLineWidth],
+          'getRadius should return correct value'
+        );
+
+        // meta
+        t.deepEqual(
+          layer.meta,
+          expectedLayerMeta,
+          'should format correct geojson layer meta'
+        );
+        // dataToFeature
+        t.deepEqual(
+          layer.dataToFeature,
+          expectedDataToFeature,
+          'should format correct geojson layer dataToFeature'
+        );
+      }
+    },
+    {
+      name: 'Geojson with style properties',
+      layer: {
+        type: 'geojson',
+        id: 'test_geojson_layer_4',
+        config: {
+          dataId,
+          label: 'some geometry file',
+          columns: {
+            geojson: '_geojson'
+          },
+          color: [5, 5, 5]
+        }
+      },
+      datasets: createNewDataEntry({
+        info: {id: dataId},
+        data: processGeojson(geoJsonWithStyle)
+      }),
+      assert: result => {
+        const {layerData, layer} = result;
+
+        const expectedLayerData = {
+          data: [
+            updatedGeoJsonLayer.dataToFeature[0],
+            updatedGeoJsonLayer.dataToFeature[2],
+            updatedGeoJsonLayer.dataToFeature[4]
+          ]
+        };
+        const expectedDataKeys = [
+          'data',
+          'getElevation',
+          'getFillColor',
+          'getFilterValue',
+          'getLineColor',
+          'getLineWidth',
+          'getRadius'
+        ];
+        const expectedLayerMeta = updatedGeoJsonLayer.meta;
+        const expectedDataToFeature = updatedGeoJsonLayer.dataToFeature;
+
+        t.deepEqual(
+          Object.keys(layerData).sort(),
+          expectedDataKeys,
+          'layerData should have 7 keys'
+        );
+        // // data
+        t.deepEqual(
+          layerData.data,
+          expectedLayerData.data,
+          'should format correct geojson layerData'
+        );
+        t.deepEqual(
+          layerData.data.map(layerData.getElevation),
+          [defaultElevation, defaultElevation, defaultElevation],
+          'getElevation should return correct value'
+        );
+        t.deepEqual(
+          layerData.data.map(layerData.getFillColor),
+          [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
+          'getFillColor should return correct value'
+        );
+        t.deepEqual(
+          layerData.data.map(layerData.getFilterValue),
+          [[11, 0, 0, 0], [20, 0, 0, 0], [Number.MIN_SAFE_INTEGER, 0, 0, 0]],
+          'getFilterValue should return correct value'
+        );
+        t.deepEqual(
+          layerData.data.map(layerData.getLineColor),
+          [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
+          'getLineColor should return correct value'
+        );
+        t.deepEqual(
+          layerData.data.map(layerData.getLineWidth),
+          [],
+          'getLineWidth should return correct value'
+        );
+        t.deepEqual(
+          layerData.data.map(layerData.getRadius),
+          [defaultLineWidth, defaultLineWidth, defaultLineWidth],
+          'getRadius should return correct value'
         );
 
         // meta
@@ -355,13 +482,13 @@ test('#GeojsonLayer -> formatLayerData', t => {
     }
   ];
 
-  testFormatLayerDataCases(t, GeojsonLayer, TEST_CASES);
+  testFormatLayerDataCases(t, GeojsonLayer, [TEST_CASES[3]]);
   t.end();
 });
 
 test('#GeojsonLayer -> renderLayer', t => {
   const filteredIndex = [0, 2, 4];
-
+  const dataCount = 3;
   const TEST_CASES = [
     {
       name: 'Test render geojson.1',
@@ -386,41 +513,25 @@ test('#GeojsonLayer -> renderLayer', t => {
           filteredIndex
         }
       },
-
       assert: deckLayers => {
         const ids = [
           'test_layer_1',
           'test_layer_1-polygons-fill',
-          'test_layer_1-polygons-stroke',
-          'test_layer_1-points'
+          'test_layer_1-polygons-stroke'
         ];
         t.deepEqual(
           deckLayers.map(l => l.id),
           ids,
-          'Should render 4 deck layers'
+          'Should render 3 deck layers'
         );
         // polygon fill attributes;
         const {attributes} = deckLayers[1].state.attributeManager;
 
-        t.deepEqual(
-          Object.keys(attributes).sort(),
-          [
-            'elevations',
-            'fillColors',
-            'indices',
-            'instanceFilterValues',
-            'lineColors',
-            'pickingColors',
-            'positions',
-            'positions64xyLow',
-            'vertexValid'
-          ],
-          'Should create 10 instance attributes'
-        );
         const indices = attributes.indices.value.length;
+
         // test elevation
         t.deepEqual(
-          attributes.elevations.value,
+          attributes.elevations.value.slice(0, indices - 1),
           new Float32Array(indices - 1).fill(defaultElevation),
           'Should have correct elevation'
         );
@@ -440,7 +551,7 @@ test('#GeojsonLayer -> renderLayer', t => {
         }
         // test fillColors
         t.deepEqual(
-          attributes.fillColors.value,
+          attributes.fillColors.value.slice(0, dataCount * 4),
           expectedFillColors,
           'Should have correct fillColors'
         );
@@ -462,13 +573,13 @@ test('#GeojsonLayer -> renderLayer', t => {
           Number.MIN_SAFE_INTEGER, 0, 0, 0
         ]);
         t.deepEqual(
-          attributes.instanceFilterValues.value,
+          attributes.instanceFilterValues.value.slice(0, dataCount * 4),
           expectedFilterValues,
           'Should have correct instanceFilterValues'
         );
         // test lineColors
         t.deepEqual(
-          attributes.lineColors.value,
+          attributes.lineColors.value.slice(0, dataCount * 4),
           expectedLineColors,
           'Should have correct lineColors'
         );
