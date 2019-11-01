@@ -60,31 +60,11 @@ test('#GridLayer -> constructor', t => {
 test('#GridLayer -> formatLayerData', t => {
   const filteredIndex = [0, 2, 4];
 
-  const datasetWithNull = {
-    ...preparedDatasetWithNull,
-    filteredIndex,
-    filteredIndexForDomain: [0, 2, 4, 5, 6, 7, 8, 9, 10]
-  };
   const expectedLayerMeta = {
     bounds: [31.2148748, 29.9870074, 31.2590542, 30.0614122]
   };
   const expectedLayerMetaNull = {
-    bounds: [31.2149361, 29.9870074, 31.2590542, 30.0292134],
-    lightSettings: {
-      lightsPosition: [
-        31.2149361,
-        29.9870074,
-        8000,
-        31.2590542,
-        30.0292134,
-        8000
-      ],
-      ambientRatio: 0.4,
-      diffuseRatio: 0.6,
-      specularRatio: 0.3,
-      lightsStrength: [0.9, 0, 0.8, 0],
-      numberOfLights: 2
-    }
+    bounds: [31.2149361, 29.9870074, 31.2590542, 30.0292134]
   };
 
   const TEST_CASES = [
@@ -112,25 +92,56 @@ test('#GridLayer -> formatLayerData', t => {
       assert: result => {
         const {layerData, layer} = result;
         const expectedLayerData = {
-          data: [rows[0], rows[2], rows[4]]
+          data: [{
+            data: rows[0],
+            index: 0
+          }, {
+            data: rows[2],
+            index: 2
+          }, {
+            data: rows[4],
+            index: 4
+          }]
         };
-        const expectedDataKeys = ['data', 'getPosition'];
+        const expectedDataKeys = [
+          'data',
+          'getColorValue',
+          'getElevationValue',
+          'getPosition'
+        ];
         t.deepEqual(
           Object.keys(layerData).sort(),
           expectedDataKeys,
-          'layerData should have 6 keys'
+          'layerData should have 4 keys'
         );
-
         t.deepEqual(
           layerData.data,
           expectedLayerData.data,
           'should format correct grid layerData'
         );
+        // test getPosition
         t.deepEqual(
           layerData.getPosition(layerData.data[0]),
           [rows[0][2], rows[0][1]],
           'getPosition should return correct position'
         );
+        // test getColorValue  [1474071095000, 1474071608000]
+        // 0: 2016-09-17 00:09:55 1474070995000
+        // 2: 2016-09-17 00:11:56 1474071116000
+        // 4: 2016-09-17 00:14:00 1474071240000
+        t.equal(
+          // assume all points fall into one bin
+          layerData.getColorValue(expectedLayerData.data),
+          2,
+          'should return filtered point count'
+        );
+        t.equal(
+          // assume all points fall into one bin
+          layerData.getElevationValue(expectedLayerData.data),
+          2,
+          'should return filtered point count'
+        );
+        // test getElevationValue
         t.deepEqual(
           layer.meta,
           expectedLayerMeta,
@@ -151,24 +162,37 @@ test('#GridLayer -> formatLayerData', t => {
             lng: 'gps_data.lng'
           },
           // color by id(int)
-          colorField: fieldsWithNull[6]
+          colorField: fieldsWithNull[6],
+          // size by id(int)
+          sizeField: fieldsWithNull[6]
         }
       },
       datasets: {
-        [dataId]: datasetWithNull
+        [dataId]: {
+          ...preparedDatasetWithNull,
+          filteredIndex: [0, 2, 4, 7],
+          filteredIndexForDomain: [0, 2, 4, 5, 6, 7, 8, 9, 10]
+        }
       },
       assert: result => {
         const {layerData, layer} = result;
 
         const expectedLayerData = {
-          data: [rowsWithNull[0], rowsWithNull[4]],
-          getPosition: () => {},
-          getColorValue: () => {}
+          data: [{
+            data: rowsWithNull[0],
+            index: 0
+          }, {
+            data: rowsWithNull[4],
+            index: 4
+          }, {
+            data: rowsWithNull[7],
+            index: 7
+          }]
         };
 
         t.deepEqual(
-          Object.keys(layerData),
-          ['data', 'getPosition', 'getColorValue'],
+          Object.keys(layerData).sort(),
+          ['data', 'getColorValue', 'getElevationValue', 'getPosition'],
           'layerData should have 3 keys'
         );
         t.deepEqual(
@@ -181,10 +205,26 @@ test('#GridLayer -> formatLayerData', t => {
           [rowsWithNull[0][2], rowsWithNull[0][1]],
           'getPosition should return correct position'
         );
-        t.ok(
-          typeof layerData.getColorValue === 'function',
-          'should have getColorValue'
+        // test getColorValue with filter [1474071095000, 1474071608000]
+        // 0: Null
+        // 4: 2016-09-17 00:14:00 1474071240000 id: 5
+        // 7: 2016-09-17 00:17:05 1474071425000 id: 345
+        t.equal(
+          // assume all points fall into one bin
+          layerData.getColorValue(expectedLayerData.data),
+          // avg id
+          (5 + 345) / 2,
+          'should calculate correct bin color'
         );
+
+        t.equal(
+          // assume all points fall into one bin
+          layerData.getElevationValue(expectedLayerData.data),
+          // avg id
+          (5 + 345) / 2,
+          'should calculate correct bin elevation'
+        );
+
         t.deepEqual(
           layer.meta,
           expectedLayerMetaNull,

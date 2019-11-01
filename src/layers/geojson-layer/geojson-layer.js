@@ -332,7 +332,6 @@ export default class GeoJsonLayer extends Layer {
 
     // get bounds from features
     const bounds = getGeojsonBounds(this.dataToFeature);
-
     // if any of the feature has properties.radius set to be true
     const fixedRadius = Boolean(
       this.dataToFeature.find(d => d && d.properties && d.properties.radius)

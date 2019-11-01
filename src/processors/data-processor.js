@@ -625,7 +625,8 @@ function findNonEmptyRowsAtField(rows, fieldIdx, total) {
  * dispatch(addDataToMap(processKeplerglJSON(keplerGlJson)));
  */
 export function processKeplerglJSON(rawData) {
-  return rawData ? KeplerGlSchema.load(rawData.datasets, rawData.config) : null;
+  const result = rawData ? KeplerGlSchema.load(rawData.datasets, rawData.config) : null;
+  return result;
 }
 
 export const Processors = {

@@ -33,7 +33,7 @@ import {
   testRenderLayerCases,
   prepareGeojsonDataset
 } from 'test/helpers/layer-utils';
-import {updatedGeoJsonLayer, geoJsonWithStyle} from 'test/fixtures/geojson';
+import {updatedGeoJsonLayer, geoJsonWithStyle, geoStyleDataToFeature, geoStyleMeta} from 'test/fixtures/geojson';
 import {createNewDataEntry} from 'utils/dataset-utils';
 import {processGeojson} from 'processors/data-processor';
 
@@ -62,9 +62,8 @@ test('#GeojsonLayer -> constructor', t => {
   t.end();
 });
 
-test.only('#GeojsonLayer -> formatLayerData', t => {
+test('#GeojsonLayer -> formatLayerData', t => {
   const filteredIndex = [0, 2, 4];
-
   const TEST_CASES = [
     {
       name: 'Geojson wkt polygon.1',
@@ -361,7 +360,7 @@ test.only('#GeojsonLayer -> formatLayerData', t => {
         );
         t.deepEqual(
           layerData.data.map(layerData.getLineWidth),
-          [],
+          [1, 1, 1],
           'getLineWidth should return correct value'
         );
         t.deepEqual(
@@ -384,6 +383,7 @@ test.only('#GeojsonLayer -> formatLayerData', t => {
         );
       }
     },
+    // test case 3
     {
       name: 'Geojson with style properties',
       layer: {
@@ -406,11 +406,7 @@ test.only('#GeojsonLayer -> formatLayerData', t => {
         const {layerData, layer} = result;
 
         const expectedLayerData = {
-          data: [
-            updatedGeoJsonLayer.dataToFeature[0],
-            updatedGeoJsonLayer.dataToFeature[2],
-            updatedGeoJsonLayer.dataToFeature[4]
-          ]
+          data: geoStyleDataToFeature
         };
         const expectedDataKeys = [
           'data',
@@ -421,8 +417,9 @@ test.only('#GeojsonLayer -> formatLayerData', t => {
           'getLineWidth',
           'getRadius'
         ];
-        const expectedLayerMeta = updatedGeoJsonLayer.meta;
-        const expectedDataToFeature = updatedGeoJsonLayer.dataToFeature;
+        const expectedLayerMeta = geoStyleMeta;
+
+        const expectedDataToFeature = geoStyleDataToFeature;
 
         t.deepEqual(
           Object.keys(layerData).sort(),
@@ -437,32 +434,32 @@ test.only('#GeojsonLayer -> formatLayerData', t => {
         );
         t.deepEqual(
           layerData.data.map(layerData.getElevation),
-          [defaultElevation, defaultElevation, defaultElevation],
+          [10, 10, 10],
           'getElevation should return correct value'
         );
         t.deepEqual(
           layerData.data.map(layerData.getFillColor),
-          [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
+          [[1, 2, 3], [7, 8, 9], [1, 2, 3]],
           'getFillColor should return correct value'
         );
         t.deepEqual(
           layerData.data.map(layerData.getFilterValue),
-          [[11, 0, 0, 0], [20, 0, 0, 0], [Number.MIN_SAFE_INTEGER, 0, 0, 0]],
+          [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
           'getFilterValue should return correct value'
         );
         t.deepEqual(
           layerData.data.map(layerData.getLineColor),
-          [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
+          [[4, 5, 6], [4, 5, 6], [4, 5, 6]],
           'getLineColor should return correct value'
         );
         t.deepEqual(
           layerData.data.map(layerData.getLineWidth),
-          [],
+          [1, 3, 4],
           'getLineWidth should return correct value'
         );
         t.deepEqual(
           layerData.data.map(layerData.getRadius),
-          [defaultLineWidth, defaultLineWidth, defaultLineWidth],
+          [5, 5, 5],
           'getRadius should return correct value'
         );
 
@@ -482,13 +479,12 @@ test.only('#GeojsonLayer -> formatLayerData', t => {
     }
   ];
 
-  testFormatLayerDataCases(t, GeojsonLayer, [TEST_CASES[3]]);
+  testFormatLayerDataCases(t, GeojsonLayer, TEST_CASES);
   t.end();
 });
 
 test('#GeojsonLayer -> renderLayer', t => {
   const filteredIndex = [0, 2, 4];
-  const dataCount = 3;
   const TEST_CASES = [
     {
       name: 'Test render geojson.1',
@@ -526,68 +522,29 @@ test('#GeojsonLayer -> renderLayer', t => {
         );
         // polygon fill attributes;
         const {attributes} = deckLayers[1].state.attributeManager;
+        const indices = attributes.indices.value;
 
-        const indices = attributes.indices.value.length;
-
-        // test elevation
-        t.deepEqual(
-          attributes.elevations.value.slice(0, indices - 1),
-          new Float32Array(indices - 1).fill(defaultElevation),
-          'Should have correct elevation'
-        );
-
-        const expectedFillColors = new Float32Array((indices - 1) * 4);
-        const expectedLineColors = new Float32Array((indices - 1) * 4);
-
-        for (let i = 0; i < indices - 1; i++) {
-          expectedFillColors[i * 4] = 1;
-          expectedFillColors[i * 4 + 1] = 2;
-          expectedFillColors[i * 4 + 2] = 3;
-          expectedFillColors[i * 4 + 3] = 255;
-          expectedLineColors[i * 4] = 4;
-          expectedLineColors[i * 4 + 1] = 5;
-          expectedLineColors[i * 4 + 2] = 6;
-          expectedLineColors[i * 4 + 3] = 255;
-        }
-        // test fillColors
-        t.deepEqual(
-          attributes.fillColors.value.slice(0, dataCount * 4),
-          expectedFillColors,
-          'Should have correct fillColors'
-        );
         // test instanceFilterValues
         const expectedFilterValues = new Float32Array([
-          11, 0, 0, 0,
-          11, 0, 0, 0,
-          11, 0, 0, 0,
-          11, 0, 0, 0,
-          11, 0, 0, 0,
-          11, 0, 0, 0,
-          20, 0, 0, 0,
-          20, 0, 0, 0,
-          20, 0, 0, 0,
-          20, 0, 0, 0,
-          Number.MIN_SAFE_INTEGER, 0, 0, 0,
-          Number.MIN_SAFE_INTEGER, 0, 0, 0,
-          Number.MIN_SAFE_INTEGER, 0, 0, 0,
-          Number.MIN_SAFE_INTEGER, 0, 0, 0
+          11, 0, 0, 0, // 0
+          11, 0, 0, 0, // 4
+          11, 0, 0, 0, // 8
+          11, 0, 0, 0, // 12
+          11, 0, 0, 0, // 16
+          11, 0, 0, 0, // 20
+          20, 0, 0, 0, // 24
+          20, 0, 0, 0, // 28
+          20, 0, 0, 0, // 32
+          20, 0, 0, 0, // 36
+          Number.MIN_SAFE_INTEGER, 0, 0, 0, // 40
+          Number.MIN_SAFE_INTEGER, 0, 0, 0, // 44
+          Number.MIN_SAFE_INTEGER, 0, 0, 0, // 48
+          Number.MIN_SAFE_INTEGER, 0, 0, 0 // 52
         ]);
         t.deepEqual(
-          attributes.instanceFilterValues.value.slice(0, dataCount * 4),
+          attributes.filterValues.value.slice(0, (indices.length - 1) * 4),
           expectedFilterValues,
-          'Should have correct instanceFilterValues'
-        );
-        // test lineColors
-        t.deepEqual(
-          attributes.lineColors.value.slice(0, dataCount * 4),
-          expectedLineColors,
-          'Should have correct lineColors'
-        );
-        // test positions
-        t.deepEqual(
-          attributes.positions.value.length,
-          42,
-          'Should have 42 positions'
+          'Should have correct filterValues'
         );
       }
     }

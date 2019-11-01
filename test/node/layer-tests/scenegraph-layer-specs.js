@@ -19,21 +19,19 @@
 // THE SOFTWARE.
 
 import test from 'tape';
+import moment from 'moment';
+
 import {
   testCreateCases,
   testFormatLayerDataCases,
-  testRenderLayerCases,
   preparedDataset,
   preparedDatasetWithNull,
   dataId,
   rows,
-  rowsWithNull,
-  fieldsWithNull
+  rowsWithNull
 } from 'test/helpers/layer-utils';
 import {KeplerGlLayers} from 'layers';
 const {ScenegraphLayer} = KeplerGlLayers;
-
-import {processCsvData} from 'processors/data-processor';
 
 test('#ScenegraphLayer -> constructor', t => {
   const TEST_CASES = {
@@ -102,31 +100,50 @@ test('#ScenegraphLayer -> formatLayerData', t => {
         const expectedLayerData = {
           data: [
             {
-              data: rows[0]
+              data: rows[0],
+              position: [31.2590542, 29.9900937, 0],
+              index: 0
             },
             {
-              data: rows[2]
+              data: rows[2],
+              position: [31.2312742, 29.9907261, 0],
+              index: 2
             },
             {
-              data: rows[4]
+              data: rows[4],
+              position: [31.2154899, 29.9923041, 0],
+              index: 4
             }
           ],
+          getFilterValue: () => {},
           getPosition: () => {}
         };
+        const expectedDataKeys = [
+          'data',
+          'getFilterValue',
+          'getPosition'
+        ];
 
         t.deepEqual(
           Object.keys(layerData).sort(),
-          Object.keys(expectedLayerData).sort(),
-          'layerData should have 2 keys'
+          expectedDataKeys,
+          'layerData should have 3 keys'
         );
-        t.ok(
-          typeof layerData.getPosition === 'function',
-          'should have getPosition accessor as function'
+        t.deepEqual(
+          layerData.data,
+          expectedLayerData.data,
+          'should format correct point layerData data'
         );
         t.deepEqual(
           layerData.getPosition(layerData.data[0]),
           [31.2590542, 29.9900937, 0],
           'getPosition should return correct lat lng'
+        );
+        // getFilterValue
+        t.deepEqual(
+          layerData.getFilterValue(layerData.data[0]),
+          [moment.utc(rows[0][0]).valueOf(), 0, 0, 0],
+          'getFilterValue should return [0, 0, 0, 0]'
         );
         t.deepEqual(
           layer.meta,
@@ -158,22 +175,28 @@ test('#ScenegraphLayer -> formatLayerData', t => {
         const expectedLayerData = {
           data: [
             {
-              data: rowsWithNull[0]
+              data: rowsWithNull[0],
+              position: [31.2590542, 29.9900937, 0],
+              index: 0
             },
             {
-              data: rowsWithNull[4]
+              data: rowsWithNull[4],
+              position: [31.2154899, 29.9923041, 0],
+              index: 4
             }
           ],
+          getFilterValue: () => {},
           getPosition: () => {}
         };
         t.deepEqual(
           Object.keys(layerData).sort(),
           Object.keys(expectedLayerData).sort(),
-          'layerData should have 2 keys'
+          'layerData should have 3 keys'
         );
-        t.ok(
-          ['getPosition'].every(k => typeof layerData[k] === 'function'),
-          'should have getPosition accessor as function'
+        t.deepEqual(
+          layerData.data,
+          expectedLayerData.data,
+          'should format correct point layerData data'
         );
         t.deepEqual(
           layerData.getPosition(layerData.data[0]),
