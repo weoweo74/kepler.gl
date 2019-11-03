@@ -51,7 +51,7 @@ test('#PointLayer -> constructor', t => {
             layer.config.dataId === 'smoothie',
             'PointLayer dataId should be correct'
           );
-          t.ok(layer.type === 'point', 'type should be grid');
+          t.ok(layer.type === 'point', 'type should be point');
           t.ok(layer.isAggregated === false, 'PointLayer is not aggregated');
         }
       }

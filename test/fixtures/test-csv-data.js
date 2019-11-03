@@ -1124,4 +1124,6 @@ export const updatedLayerSimplifiedShape = {
     fixedRadius: false
   }
 };
+
 /* eslint-enable max-lens */
+

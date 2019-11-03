@@ -50,7 +50,7 @@ export const pointVisConfigs = {
 };
 
 export default class IconLayer extends Layer {
-  constructor(props) {
+  constructor(props = {}) {
     super(props);
 
     this.registerVisConfig(pointVisConfigs);
@@ -59,6 +59,7 @@ export default class IconLayer extends Layer {
 
     // prepare layer info modal
     this._layerInfoModal = IconInfoModalFactory();
+    this.iconGeometry = props.iconGeometry || null;
     this.getSvgIcons();
   }
 
@@ -108,6 +109,7 @@ export default class IconLayer extends Layer {
     };
 
     if (window.fetch) {
+
       const response = await window.fetch(SVG_ICON_URL, fetchConfig);
       const {svgIcons} = await response.json();
 
@@ -123,6 +125,7 @@ export default class IconLayer extends Layer {
         }),
         {}
       );
+
       this._layerInfoModal = IconInfoModalFactory(svgIcons);
     }
   }

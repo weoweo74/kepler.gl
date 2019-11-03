@@ -18,16 +18,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-import './base-layer-sepcs';
-import './arc-layer-specs';
-// import './cluster-layer-specs';
-import './geojson-layer-specs';
-import './grid-layer-specs';
-// import './h3-hexagon-layer-specs';
-import './heatmap-layer-specs';
-import './hexagon-layer-specs';
-import './icon-layer-specs';
-import './line-layer-specs';
-import './point-layer-specs';
-import './scenegraph-layer-specs';
-// import './trip-layer-specs';
+export default `time,event_lat,event_lng,icon,icon-bk,severity
+2016-06-28 20:02:06,37.778564,-122.40894,accel,3
+2016-06-28 20:09:18,37.78824,-122.40894,add-person,3
+2016-06-28 20:03:16,38.281445,,alert,6
+2016-06-28 20:05:55,37.79354,-122.40121,android,5
+2016-06-28 20:03:39,37.456535,-122.136795,,4
+2016-06-28 20:05:51,37.40066,-122.10239,attach,3
+2016-06-28 20:00:18,37.769897,-122.41168,,2
+2016-06-28 20:02:13,37.798237,-122.41889,,5
+2016-06-28 20:06:23,37.76018,-122.41097,,5
+2016-06-28 20:05:16,37.37006,-121.96353,car-suv,4
+2016-06-28 20:06:28,37.418655,-122.149734,car-taxi,3`;
+
+export const iconDataId = 'test_icon_data';
+
+export const iconGeometry = {
+  accel: [1, 2, 3, 4],
+  'add-person': [1, 2, 3, 4],
+  alert: [1, 2, 3, 4],
+  android: [1, 2, 3, 4],
+  attach: [1, 2, 3, 4],
+  'car-suv': [1, 2, 3, 4],
+  'car-taxi': [1, 2, 3, 4]
+}

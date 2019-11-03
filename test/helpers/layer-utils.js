@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 
 import {LayerManager} from 'deck.gl';
+import moment from 'moment';
 import {gl} from '@deck.gl/test-utils';
 import sinon from 'sinon';
 import {console as Console} from 'global/window';
@@ -40,6 +41,15 @@ import csvData, {
   dataWithNulls as csvDataWithNulls,
   wktCsv
 } from 'test/fixtures/test-csv-data';
+import {
+  fields as tripFields,
+  rows as tripRows,
+  dataId as tripDataId
+} from 'test/fixtures/test-trip-data';
+import {
+  default as iconData,
+  iconDataId
+} from 'test/fixtures/test-icon-data';
 import {geojsonData} from 'test/fixtures/geojson';
 import {logStep} from '../../scripts/log';
 
@@ -57,7 +67,8 @@ export function testCreateLayer(t, LayerClass, props = {}) {
   return layer;
 }
 
-export function testCreateLayerFromConfig(t, datasets, layerConfig = {}) {
+export function testCreateLayerFromConfig(t, tc) {
+  const {datasets, layer: layerConfig = {}} = tc;
   let layer;
 
   t.doesNotThrow(() => {
@@ -68,6 +79,9 @@ export function testCreateLayerFromConfig(t, datasets, layerConfig = {}) {
       `${layerConfig.type} layer created`
     );
     layer.updateLayerDomain(datasets);
+    if (tc.afterLayerInitialized) {
+      tc.afterLayerInitialized(layer);
+    }
   }, `create a ${layerConfig.type} layer from config should not fail`);
 
   return layer;
@@ -108,7 +122,7 @@ export function testUpdateLayer(t, layer, updateMethod, updateArgs) {
 export function testFormatLayerDataCases(t, LayerClass, testCases) {
   testCases.forEach(tc => {
     logStep(`---> Test Format Layer Data ${tc.name}`);
-    const layer = testCreateLayerFromConfig(t, tc.datasets, tc.layer);
+    const layer = testCreateLayerFromConfig(t, tc);
     let updatedLayer = layer;
 
     // if provided updates
@@ -143,7 +157,7 @@ export function testRenderLayerCases(t, LayerClass, testCases) {
   testCases.forEach(tc => {
     logStep(`---> Test Render Layer ${tc.name}`);
 
-    const layer = testCreateLayerFromConfig(t, tc.datasets, tc.layer);
+    const layer = testCreateLayerFromConfig(t, tc);
     let result;
     let deckLayers;
 
@@ -157,7 +171,8 @@ export function testRenderLayerCases(t, LayerClass, testCases) {
           idx: 0,
           layerInteraction: {},
           mapState: INITIAL_MAP_STATE,
-          gpuFilter: getGpuFilterProps([], 'test_data_idtest'),
+          gpuFilter: tc.datasets[layer.config.dataId].gpuFilter ||
+            getGpuFilterProps([], layer.config.dataId),
           interactionConfig: INITIAL_VIS_STATE.interactionConfig,
           ...(tc.renderArgs || {})
         });
@@ -257,6 +272,11 @@ export const {rows: rowsWithNull, fields: fieldsWithNull} = processCsvData(
   csvDataWithNulls
 );
 export const dataId = '0dj3h';
+export {
+  dataId as tripDataId,
+  fields as tripFields,
+  rows as tripRows
+} from 'test/fixtures/test-trip-data';
 const gpuTimeFilter = [
   {name: 'gps_data.utc_timestamp', value: [1474071095000, 1474071608000]}
 ];
@@ -291,3 +311,29 @@ export const prepareGeojsonDataset = addFilterToData(
     {name: 'TRIPS', value: [4, 12]}
   ]
 ).datasets[dataId];
+
+export const preparedArcDataset = addFilterToData(
+  {fields: tripFields, rows: tripRows},
+  tripDataId,
+  [
+    {name: 'tpep_dropoff_datetime', value: [
+      moment.utc('2015-01-15 19:21:00').valueOf(),
+      moment.utc('2015-01-15 19:29:00').valueOf()
+    ]}
+  ]
+).datasets[tripDataId];
+
+export const {rows: iconRows, fields: iconFields} = processCsvData(iconData);
+export {iconDataId as iconDataId} from 'test/fixtures/test-icon-data';
+
+export const preparedIconDataset = addFilterToData(
+  {fields: iconFields, rows: iconRows},
+  iconDataId,
+  [
+    {name: 'time', value: [
+      moment.utc('2016-06-28 20:03:00').valueOf(),
+      moment.utc('2016-06-28 20:07:00').valueOf()
+    ]}
+  ]
+).datasets[iconDataId];
+

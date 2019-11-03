@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 
 import Layer from '../base-layer';
-// import ArcBrushingLayer from 'deckgl-layers/arc-brushing-layer/arc-brushing-layer';
 import {BrushingExtension} from '@deck.gl/extensions';
 import {ArcLayer as DeckArcLayer} from '@deck.gl/layers';
 
@@ -160,7 +159,7 @@ export default class ArcLayer extends Layer {
     const getStrokeWidth = sScale ? d =>
        this.getEncodedChannelValue(sScale, d.data, sizeField, 0) : 1;
 
-    const getColor = cScale
+    const getSourceColor = cScale
       ? d => this.getEncodedChannelValue(cScale, d.data, colorField)
       : color;
 
@@ -170,8 +169,7 @@ export default class ArcLayer extends Layer {
 
     return {
       data,
-      getColor,
-      getSourceColor: getColor,
+      getSourceColor,
       getTargetColor,
       getWidth: getStrokeWidth,
       getFilterValue: gpuFilter.filterValueAccessor()
