@@ -50,9 +50,11 @@ import {
   default as iconData,
   iconDataId
 } from 'test/fixtures/test-icon-data';
+import testLayerData, {bounds} from 'test/fixtures/test-layer-data';
 import {geojsonData} from 'test/fixtures/geojson';
 import {logStep} from '../../scripts/log';
 
+export {fieldDomain} from 'test/fixtures/test-layer-data';
 // Initialize gl once
 onWebGLInitialized(gl);
 
@@ -268,6 +270,8 @@ function addFilterToData(data, id, filters) {
 }
 
 export const {rows, fields} = processCsvData(csvData);
+export const {rows: testRows, fields: testFields} = processCsvData(testLayerData);
+
 export const {rows: rowsWithNull, fields: fieldsWithNull} = processCsvData(
   csvDataWithNulls
 );
@@ -277,21 +281,34 @@ export {
   fields as tripFields,
   rows as tripRows
 } from 'test/fixtures/test-trip-data';
+
 const gpuTimeFilter = [
-  {name: 'gps_data.utc_timestamp', value: [1474071095000, 1474071608000]}
+  {name: 'utc_timestamp', value: [
+    1474071095000,
+    1474071608000
+  ]}
 ];
 
+// export const preparedDataset = addFilterToData(
+//   {fields, rows},
+//   dataId,
+//   gpuTimeFilter
+// ).datasets[dataId];
+
 export const preparedDataset = addFilterToData(
-  {fields, rows},
+  {fields: testFields, rows: testRows},
   dataId,
   gpuTimeFilter
 ).datasets[dataId];
 
-export const preparedDatasetWithNull = addFilterToData(
-  {rows: rowsWithNull, fields: fieldsWithNull},
-  dataId,
-  gpuTimeFilter
-).datasets[dataId];
+export const pointLayerMeta = {
+  bounds: bounds['lat-lng']
+}
+// export const preparedDatasetWithNull = addFilterToData(
+//   {rows: rowsWithNull, fields: fieldsWithNull},
+//   dataId,
+//   gpuTimeFilter
+// ).datasets[dataId];
 
 export const {rows: geoCsvRows, fields: geoCsvFields} = processCsvData(wktCsv);
 export const {rows: geoJsonRows, fields: geoJsonFields} = processGeojson(cloneDeep(geojsonData));
