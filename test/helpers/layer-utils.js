@@ -20,6 +20,7 @@
 
 import {LayerManager} from 'deck.gl';
 import moment from 'moment';
+import React from 'react';
 import {gl} from '@deck.gl/test-utils';
 import sinon from 'sinon';
 import {console as Console} from 'global/window';
@@ -53,6 +54,7 @@ import {
 import testLayerData, {bounds} from 'test/fixtures/test-layer-data';
 import {geojsonData} from 'test/fixtures/geojson';
 import {logStep} from '../../scripts/log';
+import {mount} from 'enzyme';
 
 export {fieldDomain} from 'test/fixtures/test-layer-data';
 // Initialize gl once
@@ -104,6 +106,13 @@ export function testFormatLayerData(t, layer, datasets) {
 export function testCreateCases(t, LayerClass, testCases) {
   testCases.forEach(tc => {
     const layer = testCreateLayer(t, LayerClass, tc.props);
+    if (layer) {
+      t.ok(typeof layer.type === 'string', 'layer type should be string');
+      t.ok(typeof layer.id === 'string', 'layer id should be string');
+      t.doesNotThrow(() => {
+        mount(<layer.layerIcon/>);
+      }, 'layer icon should be mountable');
+    }
     if (layer && tc.test) {
       tc.test(layer);
     }
@@ -189,7 +198,7 @@ export function testRenderLayerCases(t, LayerClass, testCases) {
       );
 
       if (tc.assert) {
-        tc.assert(initialDeckLayers, layer);
+        tc.assert(initialDeckLayers, layer, result);
       }
     }
   });
