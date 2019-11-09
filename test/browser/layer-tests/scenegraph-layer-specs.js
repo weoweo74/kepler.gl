@@ -20,18 +20,23 @@
 
 import test from 'tape';
 import moment from 'moment';
+import global from 'global';
+import sinon from 'sinon';
+import sinonStubPromise from 'sinon-stub-promise';
+sinonStubPromise(sinon)
 
 import {
   testCreateCases,
   testFormatLayerDataCases,
+  testRenderLayerCases,
   preparedDataset,
-  preparedDatasetWithNull,
   dataId,
-  rows,
-  rowsWithNull
+  testRows,
+  pointLayerMeta
 } from 'test/helpers/layer-utils';
 import {KeplerGlLayers} from 'layers';
 const {ScenegraphLayer} = KeplerGlLayers;
+const columns = {lat: 'lat', lng: 'lng'};
 
 test('#ScenegraphLayer -> constructor', t => {
   const TEST_CASES = {
@@ -52,6 +57,14 @@ test('#ScenegraphLayer -> constructor', t => {
             layer.isAggregated === false,
             'ScenegraphLayer is not aggregated'
           );
+          t.ok(
+            layer.config.label === 'test 3d layer',
+            'label should be correct'
+          );
+          t.ok(
+            Object.keys(layer.columnPairs).length,
+            'should have columnPairs'
+          );
         }
       }
     ]
@@ -64,16 +77,6 @@ test('#ScenegraphLayer -> constructor', t => {
 test('#ScenegraphLayer -> formatLayerData', t => {
   const filteredIndex = [0, 2, 4];
 
-  const datasetWithNull = {
-    ...preparedDatasetWithNull,
-    filteredIndex,
-    filteredIndexForDomain: [0, 2, 4, 5, 6, 7, 8, 9, 10]
-  };
-
-  const expectedLayerMeta = {
-    bounds: [31.2148748, 29.9870074, 31.2590542, 30.0614122]
-  };
-
   const TEST_CASES = [
     {
       name: 'Scenegraph gps point.1',
@@ -83,10 +86,7 @@ test('#ScenegraphLayer -> formatLayerData', t => {
         config: {
           dataId,
           label: 'gps 3d',
-          columns: {
-            lat: 'gps_data.lat',
-            lng: 'gps_data.lng'
-          }
+          columns
         }
       },
       datasets: {
@@ -100,94 +100,20 @@ test('#ScenegraphLayer -> formatLayerData', t => {
         const expectedLayerData = {
           data: [
             {
-              data: rows[0],
-              position: [31.2590542, 29.9900937, 0],
-              index: 0
+              data: testRows[0],
+              index: 0,
+              position: [testRows[0][2], testRows[0][1], 0]
             },
             {
-              data: rows[2],
-              position: [31.2312742, 29.9907261, 0],
-              index: 2
-            },
-            {
-              data: rows[4],
-              position: [31.2154899, 29.9923041, 0],
-              index: 4
+              data: testRows[4],
+              index: 4,
+              position: [testRows[4][2], testRows[4][1], 0]
             }
           ],
           getFilterValue: () => {},
           getPosition: () => {}
         };
-        const expectedDataKeys = [
-          'data',
-          'getFilterValue',
-          'getPosition'
-        ];
 
-        t.deepEqual(
-          Object.keys(layerData).sort(),
-          expectedDataKeys,
-          'layerData should have 3 keys'
-        );
-        t.deepEqual(
-          layerData.data,
-          expectedLayerData.data,
-          'should format correct point layerData data'
-        );
-        t.deepEqual(
-          layerData.getPosition(layerData.data[0]),
-          [31.2590542, 29.9900937, 0],
-          'getPosition should return correct lat lng'
-        );
-        // getFilterValue
-        t.deepEqual(
-          layerData.getFilterValue(layerData.data[0]),
-          [moment.utc(rows[0][0]).valueOf(), 0, 0, 0],
-          'getFilterValue should return [0, 0, 0, 0]'
-        );
-        t.deepEqual(
-          layer.meta,
-          expectedLayerMeta,
-          'should format correct 3d layer meta'
-        );
-      }
-    },
-    {
-      name: 'Scenegraph gps point.2 Data With Nulls',
-      layer: {
-        type: '3D',
-        id: 'test_layer_2',
-        config: {
-          dataId,
-          label: 'some 3d file',
-          columns: {
-            lat: 'gps_data.lat',
-            lng: 'gps_data.lng'
-          }
-        }
-      },
-      datasets: {
-        [dataId]: datasetWithNull
-      },
-      assert: result => {
-        const {layerData} = result;
-
-        const expectedLayerData = {
-          data: [
-            {
-              data: rowsWithNull[0],
-              position: [31.2590542, 29.9900937, 0],
-              index: 0
-            },
-            {
-              data: rowsWithNull[4],
-              position: [31.2154899, 29.9923041, 0],
-              index: 4
-            }
-          ],
-          getFilterValue: () => {},
-          getPosition: () => {}
-        };
         t.deepEqual(
           Object.keys(layerData).sort(),
           Object.keys(expectedLayerData).sort(),
@@ -199,14 +125,89 @@ test('#ScenegraphLayer -> formatLayerData', t => {
           'should format correct point layerData data'
         );
         t.deepEqual(
-          layerData.getPosition(layerData.data[0]),
-          [31.2590542, 29.9900937, 0],
+          layerData.data.map(layerData.getPosition),
+          [
+            [testRows[0][2], testRows[0][1], 0],
+            [testRows[4][2], testRows[4][1], 0]
+          ],
           'getPosition should return correct lat lng'
+        );
+        // getFilterValue
+        t.deepEqual(
+          layerData.data.map(layerData.getFilterValue),
+          [
+            [Number.MIN_SAFE_INTEGER, 0, 0, 0],
+            [moment.utc(testRows[4][0]).valueOf(), 0, 0, 0],
+          ],
+          'getFilterValue should return [value, 0, 0, 0]'
+        );
+        // layerMeta
+        t.deepEqual(
+          layer.meta,
+          pointLayerMeta,
+          'should format correct point layer meta'
         );
       }
     }
   ];
 
   testFormatLayerDataCases(t, ScenegraphLayer, TEST_CASES);
+  t.end();
+});
+
+test('#ScenegraphLayer -> renderLayer', t => {
+
+  // TODO: mock actual gltf response
+  const mockSuccessResponse = {};
+  const mockJsonPromise = sinon.stub().returnsPromise();
+  mockJsonPromise.resolves(mockSuccessResponse);
+  const stubedFetch = sinon.stub(global, 'fetch').returnsPromise();
+
+  stubedFetch.resolves({
+    json: mockJsonPromise
+  });
+
+  const filteredIndex = [0, 2, 4];
+
+  const TEST_CASES = [
+    {
+      name: 'Scenegraph gps point.1',
+      layer: {
+        type: '3D',
+        id: 'test_layer_1',
+        config: {
+          dataId,
+          label: 'gps 3d',
+          columns
+        }
+      },
+      datasets: {
+        [dataId]: {
+          ...preparedDataset,
+          filteredIndex
+        }
+      },
+      assert: (deckLayers, layer) => {
+        t.equal(deckLayers.length, 1, 'Should create 1 deck.gl layer');
+        const {props} = deckLayers[0];
+
+        const expectedProps = {
+          opacity: layer.config.visConfig.opacity,
+          sizeScale: layer.config.visConfig.sizeScale,
+          filterRange: preparedDataset.gpuFilter.filterRange
+        }
+        Object.keys(expectedProps).forEach(key => {
+          t.equal(
+            props[key],
+            expectedProps[key],
+            `should have correct props.${key}`
+          );
+        });
+      }
+    }];
+
+  testRenderLayerCases(t, ScenegraphLayer, TEST_CASES);
+
+  stubedFetch.restore();
   t.end();
 });

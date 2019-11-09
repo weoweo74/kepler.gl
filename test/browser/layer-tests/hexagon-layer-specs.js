@@ -19,35 +19,49 @@
 // THE SOFTWARE.
 
 import test from 'tape';
+import sinon from 'sinon';
+
 import {
   testCreateCases,
   testFormatLayerDataCases,
+  testRenderLayerCases,
   preparedDataset,
-  preparedDatasetWithNull,
   dataId,
-  rows,
-  rowsWithNull,
-  fieldsWithNull
+  testRows,
+  pointLayerMeta
 } from 'test/helpers/layer-utils';
 
 import HexagonLayer from 'layers/hexagon-layer/hexagon-layer';
+
+const columns = {
+  lat: 'lat',
+  lng: 'lng'
+};
 
 test('#HexagonLayer -> constructor', t => {
   const TEST_CASES = {
     CREATE: [
       {
         props: {
-          dataId: 'smoothie',
+          dataId: 'blue',
           isVisible: true,
           label: 'test hexagon layer'
         },
         test: layer => {
           t.ok(
-            layer.config.dataId === 'smoothie',
+            layer.config.dataId === 'blue',
             'HexagonLayer dataId should be correct'
           );
           t.ok(layer.type === 'hexagon', 'type should be hexagon');
           t.ok(layer.isAggregated === true, 'HexagonLayer is aggregated');
+          t.ok(
+            layer.config.label === 'test hexagon layer',
+            'label should be correct'
+          );
+          t.ok(
+            Object.keys(layer.columnPairs).length,
+            'should have columnPairs'
+          );
         }
       }
     ]
@@ -58,15 +72,7 @@ test('#HexagonLayer -> constructor', t => {
 });
 
 test('#HexagonLayer -> formatLayerData', t => {
-  const filteredIndex = [0, 2, 4];
-
-  const expectedLayerMeta = {
-    bounds: [31.2148748, 29.9870074, 31.2590542, 30.0614122]
-  };
-
-  const expectedLayerMetaNull = {
-    bounds: [31.2149361, 29.9870074, 31.2590542, 30.0292134]
-  };
+  const filteredIndex = [0, 1, 2, 4, 5, 7];
 
   const TEST_CASES = [
     {
@@ -77,10 +83,7 @@ test('#HexagonLayer -> formatLayerData', t => {
         config: {
           dataId,
           label: 'some geometry file',
-          columns: {
-            lat: 'gps_data.lat',
-            lng: 'gps_data.lng'
-          },
+          columns,
           color: [1, 2, 3]
         }
       },
@@ -93,26 +96,18 @@ test('#HexagonLayer -> formatLayerData', t => {
       assert: result => {
         const {layerData, layer} = result;
         const expectedLayerData = {
-          data: [{
-            data: rows[0],
-            index: 0
-          }, {
-            data: rows[2],
-            index: 2
-          }, {
-            data: rows[4],
-            index: 4
-          }]
+          data: [0, 1, 2, 4, 5, 7].map(index => ({
+            data: testRows[index],
+            index
+          })),
+          getColorValue: () => {},
+          getElevationValue: () => {},
+          getPosition: () => {}
         };
-        const expectedDataKeys = [
-          'data',
-          'getColorValue',
-          'getElevationValue',
-          'getPosition'
-        ];
+
         t.deepEqual(
           Object.keys(layerData).sort(),
-          expectedDataKeys,
+          Object.keys(expectedLayerData).sort(),
           'layerData should have 4 keys'
         );
         t.deepEqual(
@@ -123,116 +118,103 @@ test('#HexagonLayer -> formatLayerData', t => {
         // test getPosition
         t.deepEqual(
           layerData.getPosition(layerData.data[0]),
-          [rows[0][2], rows[0][1]],
+          [testRows[0][2], testRows[0][1]],
           'getPosition should return correct position'
         );
         // test getColorValue  [1474071095000, 1474071608000]
-        // 0: 2016-09-17 00:09:55 1474070995000 // out of range
-        // 2: 2016-09-17 00:11:56 1474071116000
-        // 4: 2016-09-17 00:14:00 1474071240000
+        // 0: Null - 0
+        // 1: 2016-09-17 00:10:56 1474071056000 - 0
+        // 4: 2016-09-17 00:14:00 1474071240000 - 1
+        // 5: 2016-09-17 00:15:01 1474071301000 - 1
+        // 7: 2016-09-17 00:17:05 1474071425000 - 1
         t.equal(
           // assume all points fall into one bin
           layerData.getColorValue(expectedLayerData.data),
-          2,
+          3,
           'should return filtered point count'
         );
         t.equal(
           // assume all points fall into one bin
           layerData.getElevationValue(expectedLayerData.data),
-          2,
+          3,
           'should return filtered point count'
         );
-        // test getElevationValue
+        // test layer.meta
         t.deepEqual(
           layer.meta,
-          expectedLayerMeta,
+          pointLayerMeta,
           'should format correct grid layer meta'
         );
       }
     },
     {
-      name: 'hexagon layer gps point.2 Data With Nulls',
+      name: 'Hexagon layer gps point.2',
       layer: {
         type: 'hexagon',
-        id: 'test_layer_1',
+        id: 'test_layer_2',
         config: {
           dataId,
           label: 'some geometry file',
-          columns: {
-            lat: 'gps_data.lat',
-            lng: 'gps_data.lng'
+          columns,
+          color: [1, 2, 3],
+          // color by types(string)
+          colorField: {
+            type: 'string',
+            name: 'types'
           },
-          // color by id(int)
-          colorField: fieldsWithNull[6],
-          // size by id(int)
-          sizeField: fieldsWithNull[6]
+          // size by id(integer)
+          sizeField: {
+            type: 'real',
+            name: 'trip_distance'
+          }
         }
       },
       datasets: {
         [dataId]: {
-          ...preparedDatasetWithNull,
-          filteredIndex: [0, 2, 4, 7],
-          filteredIndexForDomain: [0, 2, 4, 5, 6, 7, 8, 9, 10]
+          ...preparedDataset,
+          filteredIndex
         }
       },
       assert: result => {
-        const {layerData, layer} = result;
-
-        // heagon aggregator handles filtering, vs. in grid layer, default grid layer doesn't handle filtering
+        const {layerData} = result;
         const expectedLayerData = {
-          data: [{
-            data: rowsWithNull[0],
-            index: 0
-          }, {
-            data: rowsWithNull[2],
-            index: 2
-          }, {
-            data: rowsWithNull[4],
-            index: 4
-          }, {
-            data: rowsWithNull[7],
-            index: 7
-          }]
+          data: [0, 1, 4, 5, 7].map(index => ({
+            data: testRows[index],
+            index
+          })),
+          getColorValue: () => {},
+          getElevationValue: () => {},
+          getPosition: () => {}
         };
+
         t.deepEqual(
           Object.keys(layerData).sort(),
-          ['data', 'getColorValue', 'getElevationValue', 'getPosition'],
-          'layerData should have 3 keys'
+          Object.keys(expectedLayerData).sort(),
+          'layerData should have 4 keys'
         );
-        t.deepEqual(
-          layerData.data,
-          expectedLayerData.data,
-          'should not filter out nulls, format correct hexagon layerData'
-        );
-        t.deepEqual(
-          layerData.getPosition(layerData.data[0]),
-          [rowsWithNull[0][2], rowsWithNull[0][1]],
-          'getPosition should return correct position'
-        );
-        // test getColorValue with filter [1474071095000, 1474071608000]
-        // 0: Null
-        // 2: 2016-09-17 00:11:56 1474071116000 id: 3
-        // 4: 2016-09-17 00:14:00 1474071240000 id: 5
-        // 7: 2016-09-17 00:17:05 1474071425000 id: 345
+        // test getColorValue aggregate by mode
+        // 0: driver_analytics_0 - 0
+        // 1: null  - 0
+        // 4: driver_analytics - 1
+        // 5: driver_analytics - 1
+        // 7: driver_analytics - 1
         t.equal(
           // assume all points fall into one bin
           layerData.getColorValue(expectedLayerData.data),
-          // avg id
-          (3 + 5 + 345) / 3,
-          'should calculate correct bin color'
+          'driver_analytics',
+          'should return filtered mode of (types)'
         );
-
+        // test getColorValue aggregate by avg
+        // 0: 1.59 - 0
+        // 1: 2.38  - 0
+        // 4: 2.37 - 1
+        // 5: 7.13 - 1
+        // 7: 11 - 1
         t.equal(
           // assume all points fall into one bin
           layerData.getElevationValue(expectedLayerData.data),
-          // avg id
-          (3 + 5 + 345) / 3,
-          'should calculate correct bin elevation'
-        );
-        t.deepEqual(
-          layer.meta,
-          expectedLayerMetaNull,
-          'should format correct grid layerData'
+          (2.37 + 7.13 + 11) / 3,
+          'should return filtered avg trip_distance'
         );
       }
     }

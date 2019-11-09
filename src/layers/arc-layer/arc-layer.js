@@ -183,7 +183,6 @@ export default class ArcLayer extends Layer {
       const pos = getPosition({data: d});
       return [pos[0], pos[1]];
     });
-
     const tBounds = this.getPointsBounds(allData, d => {
       const pos = getPosition({data: d});
       return [pos[3], pos[4]];

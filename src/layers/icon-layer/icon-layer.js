@@ -49,6 +49,15 @@ export const pointVisConfigs = {
   radiusRange: 'radiusRange'
 };
 
+function flatterIconPositions(icon) {
+  return icon.mesh.cells.reduce((prev, cell) => {
+    cell.forEach(p => {
+      Array.prototype.push.apply(prev, icon.mesh.positions[p]);
+    });
+    return prev;
+  }, []);
+}
+
 export default class IconLayer extends Layer {
   constructor(props = {}) {
     super(props);
@@ -101,7 +110,7 @@ export default class IconLayer extends Layer {
     };
   }
 
-  async getSvgIcons() {
+  getSvgIcons() {
     const fetchConfig = {
       method: 'GET',
       mode: 'cors',
@@ -110,23 +119,20 @@ export default class IconLayer extends Layer {
 
     if (window.fetch) {
 
-      const response = await window.fetch(SVG_ICON_URL, fetchConfig);
-      const {svgIcons} = await response.json();
+      window.fetch(SVG_ICON_URL, fetchConfig)
+        .then(response => response.json())
+        .then((parsed = {}) => {
+          const {svgIcons = []} = parsed;
+          this.iconGeometry = svgIcons.reduce(
+            (accu, curr) => ({
+              ...accu,
+              [curr.id]: flatterIconPositions(curr)
+            }),
+            {}
+          );
 
-      this.iconGeometry = svgIcons.reduce(
-        (accu, curr) => ({
-          ...accu,
-          [curr.id]: curr.mesh.cells.reduce((prev, cell) => {
-            cell.forEach(p => {
-              Array.prototype.push.apply(prev, curr.mesh.positions[p]);
-            });
-            return prev;
-          }, [])
-        }),
-        {}
-      );
-
-      this._layerInfoModal = IconInfoModalFactory(svgIcons);
+          this._layerInfoModal = IconInfoModalFactory(svgIcons);
+      });
     }
   }
 

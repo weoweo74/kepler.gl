@@ -107,6 +107,7 @@ export default class GridLayer extends AggregationLayer {
         ...this.getDefaultDeckLayerProps(opts),
         ...data,
         coverage: visConfig.coverage,
+        cellSize,
 
         // color
         colorRange: this.getColorRange(visConfig.colorRange),

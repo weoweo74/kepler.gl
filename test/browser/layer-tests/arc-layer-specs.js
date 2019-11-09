@@ -24,14 +24,22 @@ import moment from 'moment';
 import {
   testCreateCases,
   testFormatLayerDataCases,
-  tripRows,
-  tripDataId,
-  preparedArcDataset
+  testRenderLayerCases,
+  dataId,
+  testRows,
+  preparedDataset,
+  arcLayerMeta
 } from 'test/helpers/layer-utils';
 
 import {KeplerGlLayers} from 'layers';
 
 const {ArcLayer} = KeplerGlLayers;
+const columns = {
+  lat0: 'lat',
+  lng0: 'lng',
+  lat1: 'lat_1',
+  lng1: 'lng_1'
+};
 
 test('#ArcLayer -> constructor', t => {
   const TEST_CASES = {
@@ -49,6 +57,14 @@ test('#ArcLayer -> constructor', t => {
           );
           t.ok(layer.type === 'arc', 'type should be arc');
           t.ok(layer.isAggregated === false, 'ArcLayer is not aggregated');
+          t.ok(
+            layer.config.label === 'test arc layer',
+            'label should be correct'
+          );
+          t.ok(
+            Object.keys(layer.columnPairs).length,
+            'should have columnPairs'
+          );
         }
       }
     ]
@@ -60,39 +76,23 @@ test('#ArcLayer -> constructor', t => {
 
 test('#ArcLayer -> formatLayerData', t => {
   const filteredIndex = [0, 2, 4];
-  const firstRowWNull = [...preparedArcDataset.allData[0]];
-  firstRowWNull[4] = null;
-  const restRows = [...preparedArcDataset.allData];
-  restRows.shift();
-
-  const datasetWithNull = {
-    ...preparedArcDataset,
-    allData: [firstRowWNull, ...restRows],
-    filteredIndex,
-    filteredIndexForDomain: [0, 2, 4, 5, 6, 7, 8, 9, 10]
-  };
 
   const TEST_CASES = [
     {
       name: 'Arc trip data.1',
       layer: {
         config: {
-          dataId: tripDataId,
+          dataId,
           label: 'trip arcs',
-          columns: {
-            lat0: 'pickup_latitude',
-            lng0: 'pickup_longitude',
-            lat1: 'dropoff_latitude',
-            lng1: 'dropoff_longitude'
-          },
+          columns,
           color: [10, 10, 10]
         },
         type: 'arc',
         id: 'test_layer_0'
       },
       datasets: {
-        [tripDataId]: {
-          ...preparedArcDataset,
+        [dataId]: {
+          ...preparedDataset,
           filteredIndex
         }
       },
@@ -102,22 +102,16 @@ test('#ArcLayer -> formatLayerData', t => {
         const expectedLayerData = {
           data: [
             {
-              data: tripRows[0],
+              data: testRows[0],
               index: 0,
-              sourcePosition: [tripRows[0][4], tripRows[0][5], 0],
-              targetPosition: [tripRows[0][6], tripRows[0][7], 0]
+              sourcePosition: [testRows[0][2], testRows[0][1], 0],
+              targetPosition: [testRows[0][4], testRows[0][3], 0]
             },
             {
-              data: tripRows[2],
-              index: 2,
-              sourcePosition: [tripRows[2][4], tripRows[2][5], 0],
-              targetPosition: [tripRows[2][6], tripRows[2][7], 0]
-            },
-            {
-              data: tripRows[4],
+              data: testRows[4],
               index: 4,
-              sourcePosition: [tripRows[4][4], tripRows[4][5], 0],
-              targetPosition: [tripRows[4][6], tripRows[4][7], 0]
+              sourcePosition: [testRows[4][2], testRows[4][1], 0],
+              targetPosition: [testRows[4][4], testRows[4][3], 0]
             }
           ],
           getFilterValue: () => {},
@@ -153,82 +147,18 @@ test('#ArcLayer -> formatLayerData', t => {
         t.equal(layerData.getWidth, 1, 'getWidth should be a constant');
         // getFilterValue
         t.deepEqual(
-          layerData.getFilterValue(layerData.data[0]),
-          [moment.utc(tripRows[0][1]).valueOf(), 0, 0, 0],
-          'getFilterValue should return [value, 0, 0, 0]'
-        );
-
-        // layerMeta
-        t.deepEqual(
-          layer.meta,
-          {
-            bounds: [-73.99389648, 40.71858978, -73.86306, 40.7868576]
-          },
-          'should format correct arc layer meta'
-        );
-      }
-    },
-    {
-      name: 'Arc trip data.1 with Null position',
-      layer: {
-        config: {
-          dataId: tripDataId,
-          label: 'trip arcs',
-          columns: {
-            lat0: 'pickup_latitude',
-            lng0: 'pickup_longitude',
-            lat1: 'dropoff_latitude',
-            lng1: 'dropoff_longitude'
-          },
-          color: [10, 10, 10]
-        },
-        type: 'arc',
-        id: 'test_layer_1'
-      },
-      datasets: {
-        [tripDataId]: datasetWithNull
-      },
-      assert: result => {
-        const {layerData, layer} = result;
-
-        const expectedLayerData = {
-          data: [
-            {
-              data: tripRows[2],
-              index: 2,
-              sourcePosition: [tripRows[2][4], tripRows[2][5], 0],
-              targetPosition: [tripRows[2][6], tripRows[2][7], 0]
-            },
-            {
-              data: tripRows[4],
-              index: 4,
-              sourcePosition: [tripRows[4][4], tripRows[4][5], 0],
-              targetPosition: [tripRows[4][6], tripRows[4][7], 0]
-            }
+          layerData.data.map(layerData.getFilterValue),
+          [
+            [Number.MIN_SAFE_INTEGER, 0, 0, 0],
+            [moment.utc(testRows[4][0]).valueOf(), 0, 0, 0],
           ],
-          getFilterValue: () => {},
-          getSourceColor: () => {},
-          getTargetColor: () => {},
-          getWidth: () => {}
-        };
-        t.deepEqual(
-          layerData.data,
-          expectedLayerData.data,
-          'should format correct arc layerData data'
-        );
-        // getFilterValue
-        t.deepEqual(
-          layerData.getFilterValue(layerData.data[0]),
-          [moment.utc(tripRows[2][1]).valueOf(), 0, 0, 0],
           'getFilterValue should return [value, 0, 0, 0]'
         );
 
         // layerMeta
         t.deepEqual(
           layer.meta,
-          {
-            bounds: [-73.98397827, 40.71858978, -73.86306, 40.7868576]
-          },
+          arcLayerMeta,
           'should format correct arc layer meta'
         );
       }
@@ -237,14 +167,9 @@ test('#ArcLayer -> formatLayerData', t => {
       name: 'Arc trip data.2 targetColor',
       layer: {
         config: {
-          dataId: tripDataId,
+          dataId,
           label: 'trip arcs',
-          columns: {
-            lat0: 'pickup_latitude',
-            lng0: 'pickup_longitude',
-            lat1: 'dropoff_latitude',
-            lng1: 'dropoff_longitude'
-          },
+          columns,
           color: [10, 10, 10],
           visConfig: {
             targetColor: [1, 2, 3]
@@ -254,18 +179,13 @@ test('#ArcLayer -> formatLayerData', t => {
         id: 'test_layer_2'
       },
       datasets: {
-        [tripDataId]: preparedArcDataset
+        [dataId]: preparedDataset
       },
       assert: result => {
         const {layerData, layer} = result;
 
         const expectedLayerData = {
-          data: tripRows.map((row, index) => ({
-            data: row,
-            index,
-            sourcePosition: [row[4], row[5], 0],
-            targetPosition: [row[6], row[7], 0]
-          })),
+          data: [],
           getFilterValue: () => {},
           getSourceColor: () => {},
           getTargetColor: () => {},
@@ -278,11 +198,7 @@ test('#ArcLayer -> formatLayerData', t => {
           expectedDataKeys,
           'layerData should have 6 keys'
         );
-        t.deepEqual(
-          layerData.data,
-          expectedLayerData.data,
-          'should format correct arc layerData data'
-        );
+
         // getSourceColor
         t.deepEqual(
           layerData.getSourceColor,
@@ -301,57 +217,51 @@ test('#ArcLayer -> formatLayerData', t => {
       name: 'Arc trip data. with colorField and sizeField',
       layer: {
         config: {
-          dataId: tripDataId,
+          dataId,
           label: 'trip arcs',
-          columns: {
-            lat0: 'pickup_latitude',
-            lng0: 'pickup_longitude',
-            lat1: 'dropoff_latitude',
-            lng1: 'dropoff_longitude'
-          },
+          columns,
           color: [10, 10, 10],
-          // color by id contain null
+           // color by types(string)
           colorField: {
-            name: 'fare_type',
-            type: 'string'
+            type: 'string',
+            name: 'types'
           },
-          // size by id contain null
+          // size by trip_distance(real)
           sizeField: {
-            name: 'fare_amount',
-            type: 'real'
+            type: 'real',
+            name: 'trip_distance'
+          },
+          visConfig: {
+            colorRange: {
+              colors: ['#010101', '#020202', '#030303']
+            },
+            sizeRange: [10, 20]
           }
         },
         type: 'arc',
         id: 'test_layer_1'
       },
       datasets: {
-        [tripDataId]: {
-          ...preparedArcDataset,
+        [dataId]: {
+          ...preparedDataset,
           filteredIndex
         }
       },
       assert: result => {
-        const {layerData, layer} = result;
-
+        const {layerData} = result;
         const expectedLayerData = {
           data: [
             {
-              data: tripRows[0],
+              data: testRows[0],
               index: 0,
-              sourcePosition: [tripRows[0][4], tripRows[0][5], 0],
-              targetPosition: [tripRows[0][6], tripRows[0][7], 0]
+              sourcePosition: [testRows[0][2], testRows[0][1], 0],
+              targetPosition: [testRows[0][4], testRows[0][3], 0]
             },
             {
-              data: tripRows[2],
-              index: 2,
-              sourcePosition: [tripRows[2][4], tripRows[2][5], 0],
-              targetPosition: [tripRows[2][6], tripRows[2][7], 0]
-            },
-            {
-              data: tripRows[4],
+              data: testRows[4],
               index: 4,
-              sourcePosition: [tripRows[4][4], tripRows[4][5], 0],
-              targetPosition: [tripRows[4][6], tripRows[4][7], 0]
+              sourcePosition: [testRows[4][2], testRows[4][1], 0],
+              targetPosition: [testRows[4][4], testRows[4][3], 0]
             }
           ],
           getFilterValue: () => {},
@@ -372,43 +282,135 @@ test('#ArcLayer -> formatLayerData', t => {
           'should format correct arc layerData data'
         );
         // getSourceColor
+        // domain: ['driver_analytics', 'driver_analytics_0', 'driver_gps']
+        // range ['#010101', '#020202', '#030303']
         t.deepEqual(
-          layerData.getSourceColor(layerData.data[0]),
-          [199, 0, 57],
-          'getSourceColor be correct'
+          layerData.data.map(layerData.getSourceColor),
+          [[2, 2, 2], [1, 1, 1]],
+          'getSourceColor should be correct'
         );
-        // getSourceColor
-        // domain: ['apple tree', 'banana peel', 'orange peel'  ]
-        // range [ '#5A1846', '#900C3F', '#C70039', '#E3611C', '#F1920E', '#FFC300' ]
+        // getTargetColor
+        // domain: ['driver_analytics', 'driver_analytics_0', 'driver_gps']
+        // range ['#010101', '#020202', '#030303']
         t.deepEqual(
-          layerData.getTargetColor(layerData.data[0]),
-          // #C70039
-          [199, 0, 57],
+          layerData.data.map(layerData.getTargetColor),
+          [[2, 2, 2], [1, 1, 1]],
           'getTargetColors  be correct'
         );
         // getWidth
-        // domain: [11.5, 26]
-        // ran ge: [0, 10]
-        t.equal(layerData.getWidth(layerData.data[0]), 0.3448275862068966, 'getWidth should be a constant');
+        // domain: [1.59, 11]
+        // range: [10, 20]
+        // value [1.59, 2.37]
+        t.deepEqual(
+          layerData.data.map(layerData.getWidth),
+          [10, (2.37 - 1.59) * (10 / 9.41) + 10],
+          'getWidth should be a constant'
+        );
         // getFilterValue
         t.deepEqual(
-          layerData.getFilterValue(layerData.data[0]),
-          [moment.utc(tripRows[0][1]).valueOf(), 0, 0, 0],
+          layerData.data.map(layerData.getFilterValue),
+          [
+            [Number.MIN_SAFE_INTEGER, 0, 0, 0],
+            [moment.utc(testRows[4][0]).valueOf(), 0, 0, 0],
+          ],
           'getFilterValue should return [value, 0, 0, 0]'
-        );
-
-        // layerMeta
-        t.deepEqual(
-          layer.meta,
-          {
-            bounds: [-73.99389648, 40.71858978, -73.86306, 40.7868576]
-          },
-          'should format correct arc layer meta'
         );
       }
     }
   ];
 
   testFormatLayerDataCases(t, ArcLayer, TEST_CASES);
+  t.end();
+});
+
+test('#ArcLayer -> renderLayer', t => {
+  const filteredIndex = [0, 2, 4];
+
+  const TEST_CASES = [
+    {
+      name: 'Arc render layer.1',
+      layer: {
+        config: {
+          dataId,
+          label: 'trip arcs',
+          columns,
+          color: [10, 10, 10]
+        },
+        type: 'arc',
+        id: 'test_layer_0'
+      },
+      datasets: {
+        [dataId]: {
+          ...preparedDataset,
+          filteredIndex
+        }
+      },
+      assert: (deckLayers, layer) => {
+        t.equal(deckLayers.length, 1, 'Should create 1 deck.gl layer');
+        const {props} = deckLayers[0];
+
+        const expectedProps = {
+          opacity: layer.config.visConfig.opacity,
+          widthScale: layer.config.visConfig.thickness,
+          filterRange: preparedDataset.gpuFilter.filterRange
+        }
+        Object.keys(expectedProps).forEach(key => {
+          t.equal(
+            props[key],
+            expectedProps[key],
+            `should have correct props.${key}`
+          );
+        });
+      }
+    },
+    {
+      name: 'Arc render layer.2 brushing',
+      layer: {
+        config: {
+          dataId,
+          label: 'trip arcs',
+          columns,
+          color: [10, 10, 10]
+        },
+        type: 'arc',
+        id: 'test_layer_0'
+      },
+      datasets: {
+        [dataId]: {
+          ...preparedDataset,
+          filteredIndex
+        }
+      },
+      renderArgs: {
+        interactionConfig: {
+          brush: {
+            enabled: true,
+            config: {
+              size: 2.5
+            }
+          }
+        }
+      },
+      assert: (deckLayers, layer) => {
+        t.equal(deckLayers.length, 1, 'Should create 1 deck.gl layer');
+        const {props} = deckLayers[0];
+        // test instancePositions
+        const expectedProps = {
+          brushingRadius: 2500,
+          brushingEnabled: true,
+          brushingTarget: 'source'
+        }
+        Object.keys(expectedProps).forEach(key => {
+          t.equal(
+            props[key],
+            expectedProps[key],
+            `should have correct props.${key}`
+          );
+        });
+      }
+    }
+  ];
+
+  testRenderLayerCases(t, ArcLayer, TEST_CASES);
   t.end();
 });

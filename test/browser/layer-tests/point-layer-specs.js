@@ -21,7 +21,6 @@
 import test from 'tape';
 import moment from 'moment';
 import {getDistanceScales} from 'viewport-mercator-project';
-import {mount} from 'enzyme';
 import {
   testCreateCases,
   testFormatLayerDataCases,
@@ -59,7 +58,6 @@ test('#PointLayer -> constructor', t => {
             layer.config.label === 'test point layer',
             'label should be correct'
           );
-
           t.deepEqual(
             layer.columnPairs,
             {
@@ -68,7 +66,6 @@ test('#PointLayer -> constructor', t => {
             },
             'columnPairs should be correct'
           );
-          t.ok(typeof layer.layerIcon === 'function', 'should have layer icon');
         }
       }
     ]
@@ -200,22 +197,7 @@ test('#PointLayer -> formatLayerData', t => {
         );
         t.deepEqual(
           layerData.textLabels[0].characterSet,
-          [
-            'd',
-            'r',
-            'i',
-            'v',
-            'e',
-            '_',
-            'a',
-            'n',
-            'l',
-            'y',
-            't',
-            'c',
-            's',
-            '0'
-          ],
+          ['d','r','i','v','e','_','a','n','l','y','t','c','s','0'],
           'textLabels should have correct characterSet'
         );
         t.deepEqual(
@@ -484,82 +466,24 @@ test('#PointLayer -> renderLayer', t => {
           filteredIndex
         }
       },
-
       assert: (deckLayers, layer) => {
-        // test instanceAttributes
-
         t.equal(deckLayers.length, 1, 'Should create 1 deck.gl layer');
-        const {attributes} = deckLayers[0].state.attributeManager;
-
-        t.deepEqual(
-          Object.keys(attributes).sort(),
-          [
-            'brushingTargets',
-            'filterValues',
-            'instanceFillColors',
-            'instanceLineColors',
-            'instanceLineWidths',
-            'instancePickingColors',
-            'instancePositions',
-            'instanceRadius'
-          ],
-          'Should create 8 instance attributes'
-        );
-
-        // test instancePositions
-        t.deepEqual(
-          attributes.instancePositions.value.slice(0, dataCount * 3),
-          new Float32Array([
-            testRows[0][2],
-            testRows[0][1],
-            0,
-            testRows[4][2],
-            testRows[4][1],
-            0
-          ]),
-          'Should calculate correct instancePosition'
-        );
-        // test instanceFillColors
-        t.deepEqual(
-          attributes.instanceFillColors.value,
-          new Float32Array([1 / 255, 2 / 255, 3 / 255, 1]),
-          'Should calculate correct instanceFillColor'
-        );
-        // test instanceFilterValues
-        t.deepEqual(
-          attributes.filterValues.value.slice(0, dataCount * 4),
-          new Float32Array([
-            Number.MIN_SAFE_INTEGER,
-            0,
-            0,
-            0,
-            moment.utc(testRows[4][0]).valueOf(),
-            0,
-            0,
-            0
-          ]),
-          'Should calculate correct instanceFilterValues'
-        );
-        // test instanceLineColors
-        // range:[[4, 4, 4], [5,5,5], [4, 4, 4]]
-        // domain: ['driver_analytics', 'driver_analytics_0', 'driver_gps']
-        t.deepEqual(
-          attributes.instanceLineColors.value.slice(0, dataCount * 4),
-          new Float32Array([5, 5, 5, 255, 4, 4, 4, 255]),
-          'Should calculate correct instanceLineColors'
-        );
-        // test instanceLineWidths
-        t.deepEqual(
-          attributes.instanceLineWidths.value,
-          [1],
-          'Should calculate correct instanceLineWidths'
-        );
-        // test instanceRadius
-        t.deepEqual(
-          attributes.instanceRadius.value,
-          [1],
-          'Should calculate correct instanceRadius'
-        );
+        const {props} = deckLayers[0];
+        const expectedProps = {
+          opacity: layer.config.visConfig.opacity,
+          stroked: layer.config.visConfig.outline,
+          filled: layer.config.visConfig.filled,
+          radiusScale: layer.getRadiusScaleByZoom(INITIAL_MAP_STATE),
+          lineWidthScale: layer.config.visConfig.thickness,
+          filterRange: preparedDataset.gpuFilter.filterRange
+        };
+        Object.keys(expectedProps).forEach(key => {
+          t.deepEqual(
+            props[key],
+            expectedProps[key],
+            `should have correct props.${key}`
+          );
+        });
       }
     },
     {

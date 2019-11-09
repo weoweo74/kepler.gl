@@ -19,10 +19,10 @@
 // THE SOFTWARE.
 
 import {LayerManager} from 'deck.gl';
-import moment from 'moment';
 import React from 'react';
 import {gl} from '@deck.gl/test-utils';
 import sinon from 'sinon';
+import {mount} from 'enzyme';
 import {console as Console} from 'global/window';
 import cloneDeep from 'lodash.clonedeep';
 
@@ -42,21 +42,11 @@ import csvData, {
   dataWithNulls as csvDataWithNulls,
   wktCsv
 } from 'test/fixtures/test-csv-data';
-import {
-  fields as tripFields,
-  rows as tripRows,
-  dataId as tripDataId
-} from 'test/fixtures/test-trip-data';
-import {
-  default as iconData,
-  iconDataId
-} from 'test/fixtures/test-icon-data';
 import testLayerData, {bounds} from 'test/fixtures/test-layer-data';
 import {geojsonData} from 'test/fixtures/geojson';
 import {logStep} from '../../scripts/log';
-import {mount} from 'enzyme';
 
-export {fieldDomain} from 'test/fixtures/test-layer-data';
+export {fieldDomain, iconGeometry} from 'test/fixtures/test-layer-data';
 // Initialize gl once
 onWebGLInitialized(gl);
 
@@ -112,6 +102,12 @@ export function testCreateCases(t, LayerClass, testCases) {
       t.doesNotThrow(() => {
         mount(<layer.layerIcon/>);
       }, 'layer icon should be mountable');
+
+      if (layer.layerInfoModal) {
+        t.doesNotThrow(() => {
+          mount(<layer.layerInfoModal.template/>);
+        }, 'layer info modal should be mountable');
+      }
     }
     if (layer && tc.test) {
       tc.test(layer);
@@ -298,12 +294,6 @@ const gpuTimeFilter = [
   ]}
 ];
 
-// export const preparedDataset = addFilterToData(
-//   {fields, rows},
-//   dataId,
-//   gpuTimeFilter
-// ).datasets[dataId];
-
 export const preparedDataset = addFilterToData(
   {fields: testFields, rows: testRows},
   dataId,
@@ -313,11 +303,9 @@ export const preparedDataset = addFilterToData(
 export const pointLayerMeta = {
   bounds: bounds['lat-lng']
 }
-// export const preparedDatasetWithNull = addFilterToData(
-//   {rows: rowsWithNull, fields: fieldsWithNull},
-//   dataId,
-//   gpuTimeFilter
-// ).datasets[dataId];
+export const arcLayerMeta = {
+  bounds: bounds.arc
+}
 
 export const {rows: geoCsvRows, fields: geoCsvFields} = processCsvData(wktCsv);
 export const {rows: geoJsonRows, fields: geoJsonFields} = processGeojson(cloneDeep(geojsonData));
@@ -337,29 +325,3 @@ export const prepareGeojsonDataset = addFilterToData(
     {name: 'TRIPS', value: [4, 12]}
   ]
 ).datasets[dataId];
-
-export const preparedArcDataset = addFilterToData(
-  {fields: tripFields, rows: tripRows},
-  tripDataId,
-  [
-    {name: 'tpep_dropoff_datetime', value: [
-      moment.utc('2015-01-15 19:21:00').valueOf(),
-      moment.utc('2015-01-15 19:29:00').valueOf()
-    ]}
-  ]
-).datasets[tripDataId];
-
-export const {rows: iconRows, fields: iconFields} = processCsvData(iconData);
-export {iconDataId as iconDataId} from 'test/fixtures/test-icon-data';
-
-export const preparedIconDataset = addFilterToData(
-  {fields: iconFields, rows: iconRows},
-  iconDataId,
-  [
-    {name: 'time', value: [
-      moment.utc('2016-06-28 20:03:00').valueOf(),
-      moment.utc('2016-06-28 20:07:00').valueOf()
-    ]}
-  ]
-).datasets[iconDataId];
-
