@@ -36,10 +36,8 @@ export function pointToHexbin({data, radius, getPosition}, viewport) {
   // add world space coordinates to points
   // filter empty bins
   const screenPoints = data.reduce((accu, pt) => {
-    const lat = getPosition(pt)[1];
-    const lng = getPosition(pt)[0];
-
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    const pos = getPosition(pt);
+    if (pos.some(p => !Number.isFinite(p))) {
       return accu;
     }
 

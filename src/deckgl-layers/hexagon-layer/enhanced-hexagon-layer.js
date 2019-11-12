@@ -21,11 +21,16 @@
 import {HexagonLayer} from 'deck.gl';
 import {pointToHexbin} from './hexagon-aggregator';
 
-import {getColorValueDomain, getColorScaleFunction} from '../layer-utils/utils';
+import {
+  getColorValueDomain,
+  getColorScaleFunction,
+  getElevationScaleFunction
+} from '../layer-utils/utils';
 
 const defaultProps = {
   ...HexagonLayer.defaultProps,
   hexagonAggregator: pointToHexbin,
+  sizeScale: 'linear',
   colorScale: 'quantile'
 };
 
@@ -48,6 +53,10 @@ export default class EnhancedHexagonLayer extends HexagonLayer {
 
   getColorScale() {
     getColorScaleFunction(this);
+  }
+
+  getElevationScale() {
+    getElevationScaleFunction(this);
   }
 }
 

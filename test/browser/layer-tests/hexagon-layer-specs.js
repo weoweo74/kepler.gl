@@ -96,7 +96,7 @@ test('#HexagonLayer -> formatLayerData', t => {
       assert: result => {
         const {layerData, layer} = result;
         const expectedLayerData = {
-          data: [0, 1, 2, 4, 5, 7].map(index => ({
+          data: [0, 1, 4, 5, 7].map(index => ({
             data: testRows[index],
             index
           })),
@@ -221,5 +221,81 @@ test('#HexagonLayer -> formatLayerData', t => {
   ];
 
   testFormatLayerDataCases(t, HexagonLayer, TEST_CASES);
+  t.end();
+});
+
+test.only('#HexagonLayer -> renderLayer', t => {
+  const filteredIndex = [0, 1, 2, 4, 5, 7];
+  const spyLayerCallbacks = sinon.spy();
+
+  const TEST_CASES = [
+    {
+      name: 'Hexagon gps point.1',
+      layer: {
+        type: 'hexagon',
+        id: 'test_layer_1',
+        config: {
+          dataId,
+          label: 'some geometry file',
+          columns,
+          color: [1, 2, 3],
+          visConfig: {
+            worldUnitSize: 1,
+            colorRange: {
+              colors: ['#080808', '#090909', '#070707']
+            }
+          }
+        }
+      },
+      datasets: {
+        [dataId]: {
+          ...preparedDataset,
+          filteredIndex
+        }
+      },
+      renderArgs: {
+        layerCallbacks: {
+          onSetLayerDomain: spyLayerCallbacks
+        }
+      },
+      assert: (deckLayers, layer) => {
+        t.equal(deckLayers.length, 3, 'Should create 1 deck.gl layer');
+        const deckHexLayer = deckLayers[0];
+        const {props, state} = deckHexLayer;
+        console.log(state.aggregatorState.layerData.data)
+        t.deepEqual(
+          deckLayers.map(l => l.id),
+          ['test_layer_1', 'test_layer_1-hexagon-cell'],
+          'Should create 2 deck.gl layers'
+        );
+
+        const expectedProps = {
+          coverage: layer.config.visConfig.coverage,
+          radius: layer.config.visConfig.worldUnitSize * 1000,
+          colorRange: [[8, 8, 8], [9, 9, 9], [7, 7, 7]],
+          colorScale: layer.config.colorScale,
+          sizeScale: layer.config.sizeScale,
+          upperPercentile: layer.config.visConfig.percentile[1],
+          lowerPercentile: layer.config.visConfig.percentile[0]
+        };
+
+        Object.keys(expectedProps).forEach(key => {
+          t.deepEqual(
+            props[key],
+            expectedProps[key],
+            `should have correct props.${key}`
+          );
+        });
+
+        t.deepEqual(
+          spyLayerCallbacks.args[0][0],
+          [0, 2],
+          'should call onSetLayerDomain with correct domain'
+        );
+      }
+    }
+  ];
+
+  testRenderLayerCases(t, HexagonLayer, TEST_CASES);
   t.end();
 });

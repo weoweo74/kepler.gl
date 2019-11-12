@@ -24,7 +24,6 @@ import EnhancedHexagonLayer from 'deckgl-layers/hexagon-layer/enhanced-hexagon-l
 import {hexagonToPolygonGeo} from './hexagon-utils';
 import HexagonLayerIcon from './hexagon-layer-icon';
 import {clamp} from 'utils/data-utils';
-import {HIGHLIGH_COLOR_3D} from 'constants/default-settings';
 
 export const hexagonVisConfigs = {
   opacity: 'opacity',
@@ -61,31 +60,40 @@ export default class HexagonLayer extends AggregationLayer {
     return HexagonLayerIcon;
   }
 
-  renderLayer({
-    data,
-    idx,
-    objectHovered,
-    mapState,
-    interaction,
-    layerCallbacks,
-    layerInteraction
-  }) {
+  renderLayer(opts) {
+    const {
+      data,
+      gpuFilter,
+      objectHovered,
+      mapState,
+      interaction,
+      layerCallbacks,
+      layerInteraction
+    } = opts;
     const zoomFactor = this.getZoomFactor(mapState);
     const eleZoomFactor = this.getElevationZoomFactor(mapState);
     const {visConfig} = this.config;
     const radius = visConfig.worldUnitSize * 1000;
 
+    const updateTriggers = {
+      getColorValue: {
+        colorField: this.config.colorField,
+        colorAggregation: this.config.visConfig.colorAggregation,
+        ...gpuFilter.filterRange,
+        ...gpuFilter.filterValueUpdateTriggers
+      },
+      getElevationValue: {
+        sizeField: this.config.sizeField,
+        sizeAggregation: this.config.visConfig.sizeAggregation,
+        ...gpuFilter.filterRange,
+        ...gpuFilter.filterValueUpdateTriggers
+      }
+    };
+
     return [
       new EnhancedHexagonLayer({
+        ...this.getDefaultDeckLayerProps(opts),
         ...data,
-        ...layerInteraction,
-        id: this.id,
-        idx,
-
-        // highlight
-        autoHighlight: visConfig.enable3d,
-        highlightColor: HIGHLIGH_COLOR_3D,
-
         radius,
         coverage: visConfig.coverage,
 
@@ -96,20 +104,17 @@ export default class HexagonLayer extends AggregationLayer {
         upperPercentile: visConfig.percentile[1],
         lowerPercentile: visConfig.percentile[0],
 
-        // parameters
-        parameters: {depthTest: Boolean(visConfig.enable3d || mapState.dragRotate)},
-
         // elevation
         extruded: visConfig.enable3d,
         elevationScale: visConfig.elevationScale * eleZoomFactor,
+        elevationRange: visConfig.sizeRange,
         elevationLowerPercentile: visConfig.elevationPercentile[0],
         elevationUpperPercentile: visConfig.elevationPercentile[1],
 
-        // render
-        pickable: true,
-
         // callbacks
-        onSetColorDomain: layerCallbacks.onSetLayerDomain
+        onSetColorDomain: layerCallbacks.onSetLayerDomain,
+        // updateTriggers
+        updateTriggers
       }),
 
       // render an outline of each hexagon if not extruded

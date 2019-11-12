@@ -93,7 +93,6 @@ export default class AggregationLayer extends Layer {
       ...super.noneLayerDataAffectingProps,
       'enable3d',
       'colorRange',
-      // 'colorScale',
       'colorDomain',
       'sizeRange',
       'sizeScale',
@@ -242,7 +241,23 @@ export default class AggregationLayer extends Layer {
   }
 
   calculateDataAttribute(allData, filteredIndex, getPosition) {
-    return filteredIndex.map(index => ({data: allData[index], index}));
+    const data = [];
+
+    for (let i = 0; i < filteredIndex.length; i++) {
+      const index = filteredIndex[i];
+      const pos = getPosition({data: allData[index]});
+
+      // if doesn't have point lat or lng, do not add the point
+      // deck.gl can't handle position = null
+      if (pos.every(Number.isFinite)) {
+        data.push({
+          index,
+          data: allData[index]
+        });
+      }
+    }
+
+    return data;
   }
 
   formatLayerData(datasets, oldLayerData, opt = {}) {

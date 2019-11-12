@@ -54,26 +54,6 @@ export default class GridLayer extends AggregationLayer {
     return GridLayerIcon;
   }
 
-  calculateDataAttribute(allData, filteredIndex, getPosition) {
-    const data = [];
-
-    for (let i = 0; i < filteredIndex.length; i++) {
-      const index = filteredIndex[i];
-      const pos = getPosition({data: allData[index]});
-
-      // if doesn't have point lat or lng, do not add the point
-      // deck.gl can't handle position = null
-      if (pos.every(Number.isFinite)) {
-        data.push({
-          index,
-          data: allData[index]
-        });
-      }
-    }
-
-    return data;
-  }
-
   renderLayer(opts) {
     const {
       data,
@@ -125,7 +105,11 @@ export default class GridLayer extends AggregationLayer {
 
         // callbacks
         onSetColorDomain: layerCallbacks.onSetLayerDomain,
+
+        // updateTriggers
         updateTriggers,
+
+        // subLayer
         _subLayerProps: {
           CPU: {
             type: EnhancedCPUGridLayer
