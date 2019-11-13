@@ -41,23 +41,24 @@ export const pointPosResolver = ({lat, lng}) =>
 export const getValueAggrFunc = (
   field,
   aggregation,
-  filterRange,
-  getFilterValue
+  // filterRange,
+  // getFilterValue
 ) => {
-  const hasFilter = Object.values(filterRange).some(arr =>
-    arr.some(v => v !== 0)
-  );
+  // const hasFilter = Object.values(filterRange).some(arr =>
+  //   arr.some(v => v !== 0)
+  // );
   return points => {
-    const allPoints = hasFilter
-      ? points.filter(pt => {
+    const allPoints = points;
+    // const allPoints = hasFilter
+    //   ? points.filter(pt => {
 
-          const filterValues = getFilterValue(pt);
-          return filterValues.every(
-            (val, i) =>
-              val >= filterRange[i][0] && val <= filterRange[i][1]
-          )
-        })
-      : points;
+    //       const filterValues = getFilterValue(pt);
+    //       return filterValues.every(
+    //         (val, i) =>
+    //           val >= filterRange[i][0] && val <= filterRange[i][1]
+    //       )
+    //     })
+    //   : points;
     return field
       ? aggregate(allPoints.map(p => p.data[field.tableFieldIndex - 1]), aggregation)
       : allPoints.length;
@@ -268,25 +269,31 @@ export default class AggregationLayer extends Layer {
       this.config.colorField,
       this.config.visConfig.colorAggregation,
       // filterRange
-      gpuFilter.filterRange,
+      // gpuFilter.filterRange,
       // getFilterValue,
-      gpuFilter.filterValueAccessor()
+      // gpuFilter.filterValueAccessor()
     );
 
     const getElevationValue = getValueAggrFunc(
       this.config.sizeField,
       this.config.visConfig.sizeAggregation,
       // filterRange
-      gpuFilter.filterRange,
+      // gpuFilter.filterRange,
       // getFilterValue,
-      gpuFilter.filterValueAccessor()
+      // gpuFilter.filterValueAccessor()
     );
 
     const {data} = this.updateData(allData, filteredIndex, oldLayerData);
+    const hasFilter = Object.values(gpuFilter.filterRange).some(arr =>
+      arr.some(v => v !== 0)
+    );
 
     return {
       data,
       getPosition,
+      getFilterValue: gpuFilter.filterValueAccessor(),
+      filterEnabled: hasFilter,
+
       ...(getColorValue ? {getColorValue} : {}),
       ...(getElevationValue ? {getElevationValue} : {})
     };

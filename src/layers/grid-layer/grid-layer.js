@@ -71,15 +71,16 @@ export default class GridLayer extends AggregationLayer {
       getColorValue: {
         colorField: this.config.colorField,
         colorAggregation: this.config.visConfig.colorAggregation,
-        ...gpuFilter.filterRange,
-        ...gpuFilter.filterValueUpdateTriggers
+        // ...gpuFilter.filterRange,
+        // ...gpuFilter.filterValueUpdateTriggers
       },
       getElevationValue: {
         sizeField: this.config.sizeField,
         sizeAggregation: this.config.visConfig.sizeAggregation,
-        ...gpuFilter.filterRange,
-        ...gpuFilter.filterValueUpdateTriggers
-      }
+        // ...gpuFilter.filterRange,
+        // ...gpuFilter.filterValueUpdateTriggers
+      },
+      getFilterValue: gpuFilter.filterValueUpdateTriggers
     };
 
     return [
