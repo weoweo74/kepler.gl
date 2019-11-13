@@ -30,3 +30,5 @@ import './notifications';
 import './kepler-gl-test';
 import './map';
 import './side-panel';
+import './editor';
+import './map-container-test';
