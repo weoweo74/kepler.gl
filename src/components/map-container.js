@@ -211,7 +211,7 @@ export default function MapContainerFactory(MapPopover, MapControl) {
         layers,
         mousePos: {mousePosition, coordinate, pinned}
       } = this.props;
-      console.log(hoverInfo)
+
       if (!mousePosition) {
         return null;
       }

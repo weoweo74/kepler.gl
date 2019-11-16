@@ -44,24 +44,10 @@ export const getValueAggrFunc = (
   // filterRange,
   // getFilterValue
 ) => {
-  // const hasFilter = Object.values(filterRange).some(arr =>
-  //   arr.some(v => v !== 0)
-  // );
   return points => {
-    const allPoints = points;
-    // const allPoints = hasFilter
-    //   ? points.filter(pt => {
-
-    //       const filterValues = getFilterValue(pt);
-    //       return filterValues.every(
-    //         (val, i) =>
-    //           val >= filterRange[i][0] && val <= filterRange[i][1]
-    //       )
-    //     })
-    //   : points;
     return field
-      ? aggregate(allPoints.map(p => p.data[field.tableFieldIndex - 1]), aggregation)
-      : allPoints.length;
+      ? aggregate(points.map(p => p.data[field.tableFieldIndex - 1]), aggregation)
+      : points.length;
   };
 };
 

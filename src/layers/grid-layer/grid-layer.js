@@ -18,9 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-import {GeoJsonLayer, GridLayer as DeckGLGridLayer} from 'deck.gl';
+import {GeoJsonLayer, CPUGridLayer} from 'deck.gl';
 import AggregationLayer from '../aggregation-layer';
-import EnhancedCPUGridLayer from 'deckgl-layers/grid-layer/enhanced-cpu-grid-layer';
 import {pointToPolygonGeo} from './grid-utils';
 import GridLayerIcon from './grid-layer-icon';
 
@@ -70,13 +69,13 @@ export default class GridLayer extends AggregationLayer {
     const updateTriggers = {
       getColorValue: {
         colorField: this.config.colorField,
-        colorAggregation: this.config.visConfig.colorAggregation,
+        colorAggregation: this.config.visConfig.colorAggregation
         // ...gpuFilter.filterRange,
         // ...gpuFilter.filterValueUpdateTriggers
       },
       getElevationValue: {
         sizeField: this.config.sizeField,
-        sizeAggregation: this.config.visConfig.sizeAggregation,
+        sizeAggregation: this.config.visConfig.sizeAggregation
         // ...gpuFilter.filterRange,
         // ...gpuFilter.filterValueUpdateTriggers
       },
@@ -84,7 +83,7 @@ export default class GridLayer extends AggregationLayer {
     };
 
     return [
-      new DeckGLGridLayer({
+      new CPUGridLayer({
         ...this.getDefaultDeckLayerProps(opts),
         ...data,
         coverage: visConfig.coverage,
@@ -92,8 +91,8 @@ export default class GridLayer extends AggregationLayer {
 
         // color
         colorRange: this.getColorRange(visConfig.colorRange),
-        colorScale: this.config.colorScale,
-        sizeScale: this.config.sizeScale,
+        colorScaleType: this.config.colorScale,
+        elevationScaleType: this.config.sizeScale,
         upperPercentile: visConfig.percentile[1],
         lowerPercentile: visConfig.percentile[0],
 
@@ -108,14 +107,14 @@ export default class GridLayer extends AggregationLayer {
         onSetColorDomain: layerCallbacks.onSetLayerDomain,
 
         // updateTriggers
-        updateTriggers,
+        updateTriggers
 
         // subLayer
-        _subLayerProps: {
-          CPU: {
-            type: EnhancedCPUGridLayer
-          }
-        }
+        // _subLayerProps: {
+        //   CPU: {
+        //     type: EnhancedCPUGridLayer
+        //   }
+        // }
       }),
 
       // render an outline of each cell if not extruded
