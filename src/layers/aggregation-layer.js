@@ -40,16 +40,24 @@ export const pointPosResolver = ({lat, lng}) =>
 
 export const getValueAggrFunc = (
   field,
-  aggregation,
+  aggregation
   // filterRange,
   // getFilterValue
 ) => {
   return points => {
     return field
-      ? aggregate(points.map(p => p.data[field.tableFieldIndex - 1]), aggregation)
+      ? aggregate(
+          points.map(p => p.data[field.tableFieldIndex - 1]),
+          aggregation
+        )
       : points.length;
   };
 };
+
+export const getFilterDataFunc = (filterRange, getFilterValue) => pt =>
+  getFilterValue(pt).every(
+    (val, i) => val >= filterRange[i][0] && val <= filterRange[i][1]
+  );
 
 const getLayerColorRange = colorRange => colorRange.colors.map(hexToRgb);
 
@@ -253,33 +261,27 @@ export default class AggregationLayer extends Layer {
 
     const getColorValue = getValueAggrFunc(
       this.config.colorField,
-      this.config.visConfig.colorAggregation,
-      // filterRange
-      // gpuFilter.filterRange,
-      // getFilterValue,
-      // gpuFilter.filterValueAccessor()
+      this.config.visConfig.colorAggregation
     );
 
     const getElevationValue = getValueAggrFunc(
       this.config.sizeField,
-      this.config.visConfig.sizeAggregation,
-      // filterRange
-      // gpuFilter.filterRange,
-      // getFilterValue,
-      // gpuFilter.filterValueAccessor()
+      this.config.visConfig.sizeAggregation
     );
-
-    const {data} = this.updateData(allData, filteredIndex, oldLayerData);
     const hasFilter = Object.values(gpuFilter.filterRange).some(arr =>
       arr.some(v => v !== 0)
     );
+    const getFilterValue = gpuFilter.filterValueAccessor();
+    const filterData = hasFilter
+      ? getFilterDataFunc(gpuFilter.filterRange, getFilterValue)
+      : undefined;
+
+    const {data} = this.updateData(allData, filteredIndex, oldLayerData);
 
     return {
       data,
       getPosition,
-      getFilterValue: gpuFilter.filterValueAccessor(),
-      filterEnabled: hasFilter,
-
+      filterData,
       ...(getColorValue ? {getColorValue} : {}),
       ...(getElevationValue ? {getElevationValue} : {})
     };
@@ -293,6 +295,51 @@ export default class AggregationLayer extends Layer {
       // gpu data filtering is not supported in aggregation layer
       extensions: [],
       autoHighlight: this.config.visConfig.enable3d
-    }
+    };
+  }
+
+  getDefaultAggregationLayerProp(opts) {
+    const {gpuFilter, mapState, layerCallbacks} = opts;
+    const {visConfig} = this.config;
+    const eleZoomFactor = this.getElevationZoomFactor(mapState);
+    const updateTriggers = {
+      getColorValue: {
+        colorField: this.config.colorField,
+        colorAggregation: this.config.visConfig.colorAggregation
+      },
+      getElevationValue: {
+        sizeField: this.config.sizeField,
+        sizeAggregation: this.config.visConfig.sizeAggregation
+      },
+      filterData: {
+        filterRange: gpuFilter.filterRange,
+        ...gpuFilter.filterValueUpdateTriggers
+      }
+    };
+
+    return {
+      ...this.getDefaultDeckLayerProps(opts),
+      coverage: visConfig.coverage,
+
+      // color
+      colorRange: this.getColorRange(visConfig.colorRange),
+      colorScaleType: this.config.colorScale,
+      elevationScaleType: this.config.sizeScale,
+      upperPercentile: visConfig.percentile[1],
+      lowerPercentile: visConfig.percentile[0],
+
+      // elevation
+      extruded: visConfig.enable3d,
+      elevationScale: visConfig.elevationScale * eleZoomFactor,
+      elevationRange: visConfig.sizeRange,
+      elevationLowerPercentile: visConfig.elevationPercentile[0],
+      elevationUpperPercentile: visConfig.elevationPercentile[1],
+
+      // updateTriggers
+      updateTriggers,
+
+      // callbacks
+      onSetColorDomain: layerCallbacks.onSetLayerDomain
+    };
   }
 }

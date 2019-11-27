@@ -63,58 +63,19 @@ export default class HexagonLayer extends AggregationLayer {
   renderLayer(opts) {
     const {
       data,
-      gpuFilter,
       objectHovered,
       mapState,
-      interaction,
-      layerCallbacks,
       layerInteraction
     } = opts;
     const zoomFactor = this.getZoomFactor(mapState);
-    const eleZoomFactor = this.getElevationZoomFactor(mapState);
     const {visConfig} = this.config;
     const radius = visConfig.worldUnitSize * 1000;
 
-    const updateTriggers = {
-      getColorValue: {
-        colorField: this.config.colorField,
-        colorAggregation: this.config.visConfig.colorAggregation,
-        ...gpuFilter.filterRange,
-        ...gpuFilter.filterValueUpdateTriggers
-      },
-      getElevationValue: {
-        sizeField: this.config.sizeField,
-        sizeAggregation: this.config.visConfig.sizeAggregation,
-        ...gpuFilter.filterRange,
-        ...gpuFilter.filterValueUpdateTriggers
-      }
-    };
-
     return [
       new EnhancedHexagonLayer({
-        ...this.getDefaultDeckLayerProps(opts),
+        ...this.getDefaultAggregationLayerProp(opts),
         ...data,
-        radius,
-        coverage: visConfig.coverage,
-
-        // color
-        colorRange: this.getColorRange(visConfig.colorRange),
-        colorScale: this.config.colorScale,
-        opacity: visConfig.opacity,
-        upperPercentile: visConfig.percentile[1],
-        lowerPercentile: visConfig.percentile[0],
-
-        // elevation
-        extruded: visConfig.enable3d,
-        elevationScale: visConfig.elevationScale * eleZoomFactor,
-        elevationRange: visConfig.sizeRange,
-        elevationLowerPercentile: visConfig.elevationPercentile[0],
-        elevationUpperPercentile: visConfig.elevationPercentile[1],
-
-        // callbacks
-        onSetColorDomain: layerCallbacks.onSetLayerDomain,
-        // updateTriggers
-        updateTriggers
+        radius
       }),
 
       // render an outline of each hexagon if not extruded

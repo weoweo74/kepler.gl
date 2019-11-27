@@ -4004,6 +4004,17 @@ export const sampleTripDataConfig = {
           }
         },
         {
+          type: 'grid',
+          config: {
+            dataId: 'test_trip_data',
+            columns: {
+              lat: 'pickup_latitude',
+              lng: 'pickup_longitude'
+            },
+            isVisible: true
+          }
+        },
+        {
           type: 'arc',
           config: {
             dataId: 'test_trip_data',

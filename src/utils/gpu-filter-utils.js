@@ -21,6 +21,7 @@
 import {set} from './utils';
 import {MAX_GPU_FILTERS} from 'constants/default-settings';
 import {notNullorUndefined} from './data-utils';
+import {FILTER_TYPES} from './filter-utils';
 /**
  * Set gpu mode based on current number of gpu filters exists
  * @param {Object} gpuFilter
@@ -117,9 +118,9 @@ const getFilterValueAccessor = channels => (
     if (!filter) {
       return 0;
     }
-    const value = filter.mappedValue ?
-      filter.mappedValue[getIndex(d)] :
-      getData(d)[filter.fieldIdx];
+    const value = filter.mappedValue
+      ? filter.mappedValue[getIndex(d)] - filter.domain[0]
+      : getData(d)[filter.fieldIdx] - filter.domain[0];
 
     return notNullorUndefined(value) ? value : Number.MIN_SAFE_INTEGER;
   });
@@ -131,7 +132,6 @@ const getFilterValueAccessor = channels => (
  * @returns {{filterRange: {Object}, filterValueUpdateTriggers: Object, getFilterValue: Function}}
  */
 export function getGpuFilterProps(filters, dataId) {
-
   const filterRange = getEmptyFilterRange();
   const triggers = {};
 
@@ -142,8 +142,10 @@ export function getGpuFilterProps(filters, dataId) {
     const filter = filters.find(
       f => f.dataId === dataId && f.gpu && f.gpuChannel === i
     );
-    filterRange[i][0] = filter ? filter.value[0] : 0;
-    filterRange[i][1] = filter ? filter.value[1] : 0;
+
+    filterRange[i][0] = filter ? filter.value[0] - filter.domain[0] : 0;
+
+    filterRange[i][1] = filter ? filter.value[1] - filter.domain[0] : 0;
 
     triggers[`gpuFilter_${i}`] = filter ? filter.name : null;
     channels.push(filter);

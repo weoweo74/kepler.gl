@@ -280,6 +280,7 @@ export function filterDataset(dataset, filters, opt = {}) {
   if (!filters.length) {
     return {
       ...newDataset,
+      gpuFilter: getGpuFilterProps(filters, dataId),
       filteredIndex: dataset.allIndexes,
       filteredIndexForDomain: dataset.allIndexes
     };

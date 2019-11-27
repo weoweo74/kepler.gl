@@ -56,65 +56,19 @@ export default class GridLayer extends AggregationLayer {
   renderLayer(opts) {
     const {
       data,
-      gpuFilter,
       objectHovered,
-      mapState,
-      layerCallbacks
+      mapState
     } = opts;
 
     const zoomFactor = this.getZoomFactor(mapState);
-    const eleZoomFactor = this.getElevationZoomFactor(mapState);
     const {visConfig} = this.config;
     const cellSize = visConfig.worldUnitSize * 1000;
-    const updateTriggers = {
-      getColorValue: {
-        colorField: this.config.colorField,
-        colorAggregation: this.config.visConfig.colorAggregation
-        // ...gpuFilter.filterRange,
-        // ...gpuFilter.filterValueUpdateTriggers
-      },
-      getElevationValue: {
-        sizeField: this.config.sizeField,
-        sizeAggregation: this.config.visConfig.sizeAggregation
-        // ...gpuFilter.filterRange,
-        // ...gpuFilter.filterValueUpdateTriggers
-      },
-      getFilterValue: gpuFilter.filterValueUpdateTriggers
-    };
 
     return [
       new CPUGridLayer({
-        ...this.getDefaultDeckLayerProps(opts),
+        ...this.getDefaultAggregationLayerProp(opts),
         ...data,
-        coverage: visConfig.coverage,
-        cellSize,
-
-        // color
-        colorRange: this.getColorRange(visConfig.colorRange),
-        colorScaleType: this.config.colorScale,
-        elevationScaleType: this.config.sizeScale,
-        upperPercentile: visConfig.percentile[1],
-        lowerPercentile: visConfig.percentile[0],
-
-        // elevation
-        extruded: visConfig.enable3d,
-        elevationScale: visConfig.elevationScale * eleZoomFactor,
-        elevationRange: visConfig.sizeRange,
-        elevationLowerPercentile: visConfig.elevationPercentile[0],
-        elevationUpperPercentile: visConfig.elevationPercentile[1],
-
-        // callbacks
-        onSetColorDomain: layerCallbacks.onSetLayerDomain,
-
-        // updateTriggers
-        updateTriggers
-
-        // subLayer
-        // _subLayerProps: {
-        //   CPU: {
-        //     type: EnhancedCPUGridLayer
-        //   }
-        // }
+        cellSize
       }),
 
       // render an outline of each cell if not extruded

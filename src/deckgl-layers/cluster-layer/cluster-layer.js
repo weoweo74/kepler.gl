@@ -20,6 +20,8 @@
 
 import {CompositeLayer, ScatterplotLayer} from 'deck.gl';
 import geoViewport from '@mapbox/geo-viewport';
+import {_CPUAggregator as CPUAggregator} from '@deck.gl/aggregation-layers';
+
 import {ascending, max} from 'd3-array';
 import {
   getQuantileDomain,
@@ -46,6 +48,103 @@ import {
 const defaultRadius = LAYER_VIS_CONFIGS.clusterRadius.defaultValue;
 const defaultRadiusRange = LAYER_VIS_CONFIGS.clusterRadiusRange.defaultValue;
 
+const dimensionSteps = ['getClusters', 'getDomain', 'getScaleFunc'];
+const aggregator = (props, viewport) => ({data: getGeoJSON(props.data, props.getPosition)});
+
+const defaultDimensions = [
+  {
+    key: 'fillColor',
+    accessor: 'getFillColor',
+    pickingInfo: 'colorValue',
+    getClusterer: {
+      triggers: {
+        clusterRadius: {
+          prop: 'clusterRadius'
+        }
+      }
+    },
+    getClusters: {
+      triggers: {
+        zoom: {
+          prop: 'zoom'
+        }
+      }
+    },
+    getDomain: {
+      triggers: {
+        value: {
+          prop: 'getColoValue',
+          updateTrigger: 'getColoValue'
+        },
+        scaleType: {
+          prop: 'colorScaleType'
+        }
+      },
+      onSet: {
+        props: 'onSetColorDomain'
+      }
+    },
+    getScaleFunc: {
+      triggers: {
+        domain: {
+          prop: 'colorDomain'
+        },
+        range: {
+          prop: 'colorRange'
+        }
+      }
+    },
+    nullValue: [0, 0, 0, 0]
+  },
+  {
+    key: 'elevation',
+    accessor: 'getElevation',
+    pickingInfo: 'elevationValue',
+    getBins: {
+      triggers: {
+        value: {
+          prop: 'getElevationValue',
+          updateTrigger: 'getElevationValue'
+        },
+        weight: {
+          prop: 'getElevationWeight',
+          updateTrigger: 'getElevationWeight'
+        },
+        aggregation: {
+          prop: 'elevationAggregation'
+        },
+        filterData: {
+          prop: 'filterData',
+          updateTrigger: 'filterData'
+        }
+      }
+    },
+    getDomain: {
+      triggers: {
+        lowerPercentile: {
+          prop: 'elevationLowerPercentile'
+        },
+        upperPercentile: {
+          prop: 'elevationUpperPercentile'
+        },
+        scaleType: {
+          prop: 'elevationScaleType'
+        }
+      },
+      onSet: {
+        props: 'onSetElevationDomain'
+      }
+    },
+    getScaleFunc: {
+      triggers: {
+        domain: {prop: 'elevationDomain'},
+        range: {prop: 'elevationRange'}
+      }
+    },
+    nullValue: -1
+  }
+];
+
 const defaultProps = {
   clusterRadius: defaultRadius,
   colorDomain: null,
@@ -63,21 +162,30 @@ const defaultProps = {
   getColorValue: points => points.length,
 
   //  if want to have radius based on customized aggregator, instead of count
-  getRadiusValue: cell => cell.properties.point_count,
-  fp64: false
+  getRadiusValue: cell => cell.properties.point_count
 };
 
 export default class ClusterLayer extends CompositeLayer {
   initializeState() {
+    const cpuAggregator = new CPUAggregator({
+      getAggregator: props => props,
+      getCellSize: props => props.clusterRadius
+    });
+
     this.state = {
-      clusters: null,
+      cpuAggregator,
+      aggregatorState: cpuAggregator.state,
       geoJSON: null
     };
+    // this.state = {
+    //   clusters: null,
+    //   geoJSON: null
+    // };
   }
 
-  shouldUpdateState({changeFlags}) {
-    return changeFlags.somethingChanged;
-  }
+  // shouldUpdateState({changeFlags}) {
+  //   return changeFlags.somethingChanged;
+  // }
 
   updateState({context, oldProps, props, changeFlags}) {
     if (changeFlags.dataChanged || this.needsReProjectPoints(oldProps, props)) {
